@@ -26,16 +26,22 @@ function removeItem(button) {
 
 function updateTotal() {
   let total = 0;
+  let output = "";
   for (let i = 0; i < itemIndex; i++) {
+    const descEl = document.getElementById(`desc-${i}`);
     const qtyEl = document.getElementById(`qty-${i}`);
     const rateEl = document.getElementById(`rate-${i}`);
-    if (qtyEl && rateEl) {
+    if (descEl && qtyEl && rateEl) {
+      const desc = descEl.value.trim();
       const qty = parseFloat(qtyEl.value) || 0;
       const rate = parseFloat(rateEl.value) || 0;
-      total += qty * rate;
+      const lineTotal = qty * rate;
+      total += lineTotal;
+      output += `${desc} (x${qty} @ £${rate.toFixed(2)}) = £${lineTotal.toFixed(2)}\n`;
     }
   }
   document.getElementById("totalAmount").innerText = total.toFixed(2);
+  document.getElementById("printLineItems").innerText = output.trim();
 }
 
 function togglePaymentDetails() {
@@ -48,6 +54,11 @@ function generatePDF() {
   document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
   document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
+  document.getElementById("printJobDetails").innerText = document.getElementById("jobDetails").value;
+  updateTotal();
   togglePaymentDetails();
   window.print();
 }
+
+// Init
+addItem();
