@@ -42,14 +42,23 @@ function updateTotal() {
 function togglePaymentDetails() {
   const docType = document.getElementById("docType").value;
   document.getElementById("paymentDetails").classList.toggle("hidden", docType !== "invoice");
+  document.getElementById("docTypeDisplay").innerText = docType === "invoice" ? "Invoice" : "Quote";
 }
 
 function generatePDF() {
   const jobDetails = document.getElementById("jobDetails");
   const customerAddress = document.getElementById("customerAddress");
+  const customerName = document.getElementById("customerName");
   const notes = document.getElementById("notes");
 
-  // Expand textareas before printing
+  // Show document type
+  togglePaymentDetails();
+
+  // Show plain text for name/address
+  document.querySelector(".printCustomerName").innerText = customerName.value;
+  document.querySelector(".printCustomerAddress").innerText = customerAddress.value;
+
+  // Expand textareas
   [jobDetails, customerAddress, notes].forEach(el => {
     el.setAttribute("readonly", true);
     el.style.height = el.scrollHeight + "px";
@@ -57,7 +66,7 @@ function generatePDF() {
 
   window.print();
 
-  // Reset after print
+  // Reset
   setTimeout(() => {
     [jobDetails, customerAddress, notes].forEach(el => {
       el.removeAttribute("readonly");
