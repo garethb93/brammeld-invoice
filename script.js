@@ -45,5 +45,23 @@ function togglePaymentDetails() {
 }
 
 function generatePDF() {
+  const jobDetails = document.getElementById("jobDetails");
+  const customerAddress = document.getElementById("customerAddress");
+  const notes = document.getElementById("notes");
+
+  // Expand textareas before printing
+  [jobDetails, customerAddress, notes].forEach(el => {
+    el.setAttribute("readonly", true);
+    el.style.height = el.scrollHeight + "px";
+  });
+
   window.print();
+
+  // Reset after print
+  setTimeout(() => {
+    [jobDetails, customerAddress, notes].forEach(el => {
+      el.removeAttribute("readonly");
+      el.style.height = null;
+    });
+  }, 1000);
 }
