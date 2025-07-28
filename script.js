@@ -13,7 +13,6 @@ function addItem() {
   `;
   container.appendChild(row);
   itemIndex++;
-
   updateTotal();
   document.querySelectorAll("input").forEach(input => {
     input.addEventListener("input", updateTotal);
@@ -46,25 +45,9 @@ function togglePaymentDetails() {
 }
 
 function generatePDF() {
-  // Update print-friendly text
   document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
+  document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
   togglePaymentDetails();
-
-  // Expand any overflowing textareas
-  ["jobDetails", "customerAddress", "notes"].forEach(id => {
-    const el = document.getElementById(id);
-    el.setAttribute("readonly", true);
-    el.style.height = el.scrollHeight + "px";
-  });
-
   window.print();
-
-  setTimeout(() => {
-    ["jobDetails", "customerAddress", "notes"].forEach(id => {
-      const el = document.getElementById(id);
-      el.removeAttribute("readonly");
-      el.style.height = null;
-    });
-  }, 500);
 }
