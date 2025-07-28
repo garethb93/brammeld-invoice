@@ -51,14 +51,18 @@ function togglePaymentDetails() {
 }
 
 function generatePDF() {
-  document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
-  document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
+  document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value.trim();
+  document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value.trim();
   document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
-  document.getElementById("printJobDetails").innerText = document.getElementById("jobDetails").value;
-  updateTotal();
+  document.getElementById("printJobDetails").innerText = document.getElementById("jobDetails").value.trim();
+  updateTotal(); // Ensures costs show
   togglePaymentDetails();
-  window.print();
+
+  // Slight delay ensures all content is updated before print
+  setTimeout(() => {
+    window.print();
+  }, 200);
 }
 
-// Init
+// Init first cost row
 addItem();
