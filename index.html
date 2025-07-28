@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Brammeld Contracts - Invoice Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4">
+  <div class="max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
+    <div class="flex items-center justify-between">
+      <img src="logo.png" alt="Logo" class="h-24 max-w-[150px] object-contain" />
+      <div class="text-right">
+        <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
+        <p>brammeldcontracts@hotmail.com</p>
+        <p>07894013765</p>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <label class="block font-semibold">Document Type</label>
+      <select id="docType" class="border p-2 mt-1 rounded" onchange="togglePaymentDetails()">
+        <option value="quote">Quote</option>
+        <option value="invoice">Invoice</option>
+      </select>
+    </div>
+
+    <div class="mt-4">
+      <label class="block font-semibold">Customer Name</label>
+      <input type="text" id="customerName" class="w-full border p-2 rounded mt-1"/>
+    </div>
+
+    <div class="mt-4">
+      <label class="block font-semibold">Customer Address</label>
+      <textarea id="customerAddress" class="w-full border p-2 rounded mt-1" rows="2"></textarea>
+    </div>
+
+    <div class="mt-4">
+      <label class="block font-semibold">Job Description / Address</label>
+      <textarea id="jobDetails" class="w-full border p-2 rounded mt-1" rows="3"></textarea>
+    </div>
+
+    <div class="mt-4">
+      <label class="block font-semibold">Costs</label>
+      <div id="lineItems" class="space-y-2 mt-2"></div>
+      <button onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded">Add Cost</button>
+    </div>
+
+    <div class="mt-4 font-bold text-lg">
+      Total: £<span id="totalAmount">0.00</span>
+    </div>
+
+    <div class="mt-4">
+      <label class="block font-semibold">Notes</label>
+      <textarea id="notes" class="w-full border p-2 rounded mt-1" rows="2">Thank you for your business.</textarea>
+    </div>
+
+    <div id="paymentDetails" class="mt-4 hidden">
+      <h2 class="font-bold mt-6">Payment Details:</h2>
+      <p>BRAMMELD CONTRACTS</p>
+      <p>Monzo</p>
+      <p>Sort Code: 04-00-03</p>
+      <p>Account Number: 1408 1712</p>
+      <p>brammeldcontracts@hotmail.com</p>
+      <p>07894013765</p>
+    </div>
+
+    <button onclick="generatePDF()" class="mt-6 bg-green-600 text-white px-6 py-2 rounded">
+      Download PDF
+    </button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
