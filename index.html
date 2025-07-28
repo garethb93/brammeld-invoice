@@ -7,16 +7,23 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @media print {
-      #docType, #docTypeWrapper, #addCostButton, #customerName, #customerAddress {
+      #docTypeWrapper,
+      #customerName,
+      #customerAddress,
+      #addCostButton,
+      select,
+      textarea,
+      input[type="text"],
+      input[type="number"] {
         display: none !important;
       }
-      .printCustomerName,
-      .printCustomerAddress {
+
+      .print-only {
         display: block !important;
       }
     }
-    .printCustomerName,
-    .printCustomerAddress {
+
+    .print-only {
       display: none;
     }
   </style>
@@ -29,7 +36,7 @@
         <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
         <p>brammeldcontracts@hotmail.com</p>
         <p>07894013765</p>
-        <p id="docTypeDisplay" class="text-xl font-semibold mt-2"></p>
+        <p id="docTypeDisplay" class="text-xl font-semibold mt-2 print-only"></p>
       </div>
     </div>
 
@@ -44,18 +51,18 @@
     <div class="mt-4">
       <label class="block font-semibold">Customer Name</label>
       <input type="text" id="customerName" class="w-full border p-2 rounded mt-1"/>
-      <p class="printCustomerName mt-1 font-medium"></p>
+      <p id="printCustomerName" class="print-only font-medium mt-1"></p>
     </div>
 
     <div class="mt-4">
       <label class="block font-semibold">Customer Address</label>
       <textarea id="customerAddress" class="w-full border p-2 rounded mt-1" rows="2"></textarea>
-      <p class="printCustomerAddress mt-1 font-medium whitespace-pre-line"></p>
+      <p id="printCustomerAddress" class="print-only font-medium whitespace-pre-line mt-1"></p>
     </div>
 
     <div class="mt-4">
       <label class="block font-semibold">Job Description / Address</label>
-      <textarea id="jobDetails" class="w-full border p-2 rounded mt-1" rows="3"></textarea>
+      <textarea id="jobDetails" class="w-full border p-2 rounded mt-1" rows="4"></textarea>
     </div>
 
     <div class="mt-4">
