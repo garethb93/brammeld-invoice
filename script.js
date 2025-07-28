@@ -46,31 +46,25 @@ function togglePaymentDetails() {
 }
 
 function generatePDF() {
-  const jobDetails = document.getElementById("jobDetails");
-  const customerAddress = document.getElementById("customerAddress");
-  const customerName = document.getElementById("customerName");
-  const notes = document.getElementById("notes");
-
-  // Show document type
+  // Update print-friendly text
+  document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
+  document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
   togglePaymentDetails();
 
-  // Show plain text for name/address
-  document.querySelector(".printCustomerName").innerText = customerName.value;
-  document.querySelector(".printCustomerAddress").innerText = customerAddress.value;
-
-  // Expand textareas
-  [jobDetails, customerAddress, notes].forEach(el => {
+  // Expand any overflowing textareas
+  ["jobDetails", "customerAddress", "notes"].forEach(id => {
+    const el = document.getElementById(id);
     el.setAttribute("readonly", true);
     el.style.height = el.scrollHeight + "px";
   });
 
   window.print();
 
-  // Reset
   setTimeout(() => {
-    [jobDetails, customerAddress, notes].forEach(el => {
+    ["jobDetails", "customerAddress", "notes"].forEach(id => {
+      const el = document.getElementById(id);
       el.removeAttribute("readonly");
       el.style.height = null;
     });
-  }, 1000);
+  }, 500);
 }
