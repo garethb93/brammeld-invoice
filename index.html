@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Brammeld Contracts - Invoice Builder</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -11,18 +11,18 @@
       #customerName,
       #customerAddress,
       #addCostButton,
+      #dateWrapper,
       select,
       textarea,
       input[type="text"],
-      input[type="number"] {
+      input[type="number"],
+      input[type="date"] {
         display: none !important;
       }
-
       .print-only {
         display: block !important;
       }
     }
-
     .print-only {
       display: none;
     }
@@ -37,6 +37,7 @@
         <p>brammeldcontracts@hotmail.com</p>
         <p>07894013765</p>
         <p id="docTypeDisplay" class="text-xl font-semibold mt-2 print-only"></p>
+        <p id="printDate" class="text-sm print-only"></p>
       </div>
     </div>
 
@@ -48,9 +49,14 @@
       </select>
     </div>
 
+    <div id="dateWrapper" class="mt-4">
+      <label class="block font-semibold">Date</label>
+      <input type="date" id="invoiceDate" class="w-full border p-2 rounded mt-1" />
+    </div>
+
     <div class="mt-4">
       <label class="block font-semibold">Customer Name</label>
-      <input type="text" id="customerName" class="w-full border p-2 rounded mt-1"/>
+      <input type="text" id="customerName" class="w-full border p-2 rounded mt-1" />
       <p id="printCustomerName" class="print-only font-medium mt-1"></p>
     </div>
 
