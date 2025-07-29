@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Brammeld Contracts - Invoice Builder</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="script.js"></script>
   <style>
     @media print {
+      button,
       #docTypeWrapper,
       #customerName,
       #customerAddress,
@@ -19,7 +21,6 @@
       input[type="text"],
       input[type="number"],
       input[type="date"],
-      button,
       .screen-only {
         display: none !important;
       }
@@ -33,79 +34,108 @@
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4">
-  <div class="max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
-    <div class="flex items-center justify-between">
-      <img src="logo.png" alt="Logo" class="h-32 max-w-[200px] object-contain" />
-      <div class="text-right">
-        <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
+
+  <!-- Login Section -->
+  <div id="loginSection" class="max-w-md mx-auto bg-white shadow-lg p-6 rounded-md">
+    <h2 class="text-2xl font-bold mb-4">Login</h2>
+    <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
+    <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-2">
+    <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">Login</button>
+    <button id="registerBtn" class="w-full bg-gray-600 text-white p-2 rounded mt-2">Register</button>
+  </div>
+
+  <!-- Main App Section -->
+  <div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
+    <div class="flex justify-between mb-4">
+      <h2 class="text-xl font-bold">Quotes</h2>
+      <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+    </div>
+
+    <!-- Saved Quotes List -->
+    <div id="quotesList" class="mb-6">
+      <h3 class="font-semibold mb-2">Saved Quotes</h3>
+      <ul id="quotesUl" class="border rounded p-2 text-sm"></ul>
+    </div>
+
+    <!-- Invoice Builder -->
+    <div id="builder">
+      <div class="flex items-center justify-between">
+        <img src="logo.png" alt="Logo" class="h-32 max-w-[200px] object-contain" />
+        <div class="text-right">
+          <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
+          <p>brammeldcontracts@hotmail.com</p>
+          <p>07894013765</p>
+          <p id="docTypeDisplay" class="text-xl font-semibold mt-2 print-only"></p>
+          <p id="printDate" class="text-sm print-only"></p>
+        </div>
+      </div>
+
+      <div id="docTypeWrapper" class="mt-6">
+        <label class="block font-semibold">Document Type</label>
+        <select id="docType" class="border p-2 mt-1 rounded">
+          <option value="quote">Quote</option>
+          <option value="invoice">Invoice</option>
+        </select>
+      </div>
+
+      <div id="dateWrapper" class="mt-4">
+        <label class="block font-semibold">Date</label>
+        <input type="date" id="invoiceDate" class="w-full border p-2 rounded mt-1" />
+      </div>
+
+      <div class="mt-4">
+        <label class="block font-semibold">Customer Name</label>
+        <input type="text" id="customerName" class="w-full border p-2 rounded mt-1" />
+        <p id="printCustomerName" class="print-only font-medium mt-1"></p>
+      </div>
+
+      <div class="mt-4">
+        <label class="block font-semibold">Customer Address</label>
+        <textarea id="customerAddress" class="w-full border p-2 rounded mt-1" rows="2"></textarea>
+        <p id="printCustomerAddress" class="print-only font-medium whitespace-pre-line mt-1"></p>
+      </div>
+
+      <div class="mt-4">
+        <label class="block font-semibold">Job Description</label>
+        <textarea id="jobDetails" class="w-full border p-2 rounded mt-1" rows="4"></textarea>
+        <p id="printJobDetails" class="print-only whitespace-pre-line mt-1"></p>
+      </div>
+
+      <div class="mt-4">
+        <label class="block font-semibold">Costs</label>
+        <div id="lineItems" class="space-y-2 mt-2"></div>
+        <div id="printLineItems" class="print-only mt-4 whitespace-pre-line"></div>
+        <button id="addCostButton" onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">Add Cost</button>
+      </div>
+
+      <div class="mt-4 font-bold text-lg">
+        Total: £<span id="totalAmount">0.00</span>
+      </div>
+
+      <div class="mt-4">
+        <label class="block font-semibold">Notes</label>
+        <textarea id="notes" class="w-full border p-2 rounded mt-1" rows="2">Thank you for your business.</textarea>
+      </div>
+
+      <div id="paymentDetails" class="mt-4 hidden">
+        <h2 class="font-bold mt-6">Payment Details:</h2>
+        <p>BRAMMELD CONTRACTS</p>
+        <p>Monzo</p>
+        <p>Sort Code: 04-00-03</p>
+        <p>Account Number: 1408 1712</p>
         <p>brammeldcontracts@hotmail.com</p>
         <p>07894013765</p>
-        <p id="docTypeDisplay" class="text-xl font-semibold mt-2 print-only"></p>
-        <p id="printDate" class="text-sm print-only"></p>
+      </div>
+
+      <div class="mt-6 flex gap-2">
+        <button onclick="generatePDF()" class="bg-green-600 text-white px-6 py-2 rounded screen-only">
+          Download PDF
+        </button>
+        <button id="saveQuoteBtn" class="bg-blue-600 text-white px-6 py-2 rounded screen-only">
+          Save Quote
+        </button>
       </div>
     </div>
-
-    <div id="docTypeWrapper" class="mt-6">
-      <label class="block font-semibold">Document Type</label>
-      <select id="docType" class="border p-2 mt-1 rounded">
-        <option value="quote">Quote</option>
-        <option value="invoice">Invoice</option>
-      </select>
-    </div>
-
-    <div id="dateWrapper" class="mt-4">
-      <label class="block font-semibold">Date</label>
-      <input type="date" id="invoiceDate" class="w-full border p-2 rounded mt-1" />
-    </div>
-
-    <div class="mt-4">
-      <label class="block font-semibold">Customer Name</label>
-      <input type="text" id="customerName" class="w-full border p-2 rounded mt-1" />
-      <p id="printCustomerName" class="print-only font-medium mt-1"></p>
-    </div>
-
-    <div class="mt-4">
-      <label class="block font-semibold">Customer Address</label>
-      <textarea id="customerAddress" class="w-full border p-2 rounded mt-1" rows="2"></textarea>
-      <p id="printCustomerAddress" class="print-only font-medium whitespace-pre-line mt-1"></p>
-    </div>
-
-    <div class="mt-4">
-      <label class="block font-semibold">Job Description</label>
-      <textarea id="jobDetails" class="w-full border p-2 rounded mt-1" rows="4"></textarea>
-      <p id="printJobDetails" class="print-only whitespace-pre-line mt-1"></p>
-    </div>
-
-    <div class="mt-4">
-      <label class="block font-semibold">Costs</label>
-      <div id="lineItems" class="space-y-2 mt-2"></div>
-      <div id="printLineItems" class="print-only mt-4 whitespace-pre-line"></div>
-      <button id="addCostButton" onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">Add Cost</button>
-    </div>
-
-    <div class="mt-4 font-bold text-lg">
-      Total: £<span id="totalAmount">0.00</span>
-    </div>
-
-    <div class="mt-4">
-      <label class="block font-semibold">Notes</label>
-      <textarea id="notes" class="w-full border p-2 rounded mt-1" rows="2">Thank you for your business.</textarea>
-    </div>
-
-    <div id="paymentDetails" class="mt-4 hidden">
-      <h2 class="font-bold mt-6">Payment Details:</h2>
-      <p>BRAMMELD CONTRACTS</p>
-      <p>Monzo</p>
-      <p>Sort Code: 04-00-03</p>
-      <p>Account Number: 1408 1712</p>
-      <p>brammeldcontracts@hotmail.com</p>
-      <p>07894013765</p>
-    </div>
-
-    <button onclick="generatePDF()" class="mt-6 bg-green-600 text-white px-6 py-2 rounded screen-only">
-      Download PDF
-    </button>
   </div>
-  <script src="script.js"></script>
 </body>
 </html>
