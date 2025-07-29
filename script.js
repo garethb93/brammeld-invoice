@@ -46,12 +46,10 @@ function updateTotal() {
 }
 
 function formatNumber(dateStr) {
-  // Format date into DDMMYY
   const date = dateStr ? new Date(dateStr) : new Date();
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const yy = String(date.getFullYear()).slice(2);
-  // Add 2 random digits
   const random = Math.floor(Math.random() * 90 + 10);
   return `${dd}${mm}${yy}-${random}`;
 }
@@ -69,10 +67,10 @@ function generatePDF() {
   const customerName = document.getElementById("customerName").value.trim();
   const dateValue = document.getElementById("invoiceDate").value;
 
-  // Generate new number based on date + random
+  // Generate number with date and 2 random digits
   currentNumber = formatNumber(dateValue);
 
-  // Update all printable fields
+  // Update printable fields
   document.getElementById("printCustomerName").innerText = customerName;
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value.trim();
   document.getElementById("printDate").innerText = dateValue;
@@ -81,7 +79,6 @@ function generatePDF() {
   setDocTypeDisplay();
 
   // Create filename
-  const formattedDate = dateValue || new Date().toISOString().split("T")[0];
   const safeName = customerName || "Customer";
   const filename = `${docType === "invoice" ? "Invoice" : "Quote"}-${currentNumber}-${safeName}.pdf`;
 
@@ -92,5 +89,5 @@ function generatePDF() {
   }, 200);
 }
 
-// Init first row
+// Init first cost row
 addItem();
