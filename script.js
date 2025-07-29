@@ -231,6 +231,7 @@ window.generatePDF = function () {
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value.trim();
   document.getElementById("printDate").innerText = dateValue;
   document.getElementById("printJobDetails").innerText = document.getElementById("jobDetails").value.trim();
+  document.getElementById("printNotes").innerText = document.getElementById("notes").value.trim();
   updateTotal();
   setDocTypeDisplay();
 
