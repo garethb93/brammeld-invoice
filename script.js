@@ -7,7 +7,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDFNBKaTviJNHp95gKqKgphwp3LHu9NCfs",
   authDomain: "brammeld-invoice.firebaseapp.com",
   projectId: "brammeld-invoice",
-  storageBucket: "brammeld-invoice.firebasestorage.app",
+  storageBucket: "brammeld-invoice.appspot.app",
   messagingSenderId: "380302735360",
   appId: "1:380302735360:web:f4efd9e4fd330a038640e5"
 };
