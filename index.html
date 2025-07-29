@@ -8,19 +8,6 @@
   <script type="module" src="script.js"></script>
   <style>
     @media print {
-      button,
-      #docTypeWrapper,
-      #customerName,
-      #customerAddress,
-      #addCostButton,
-      #dateWrapper,
-      #notes,
-      label,
-      select,
-      textarea,
-      input[type="text"],
-      input[type="number"],
-      input[type="date"],
       .screen-only {
         display: none !important;
       }
@@ -53,12 +40,12 @@
   <!-- Main App Section -->
   <div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
     <div class="flex justify-between mb-4">
-      <h2 class="text-xl font-bold">Quotes</h2>
-      <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+      <h2 class="text-xl font-bold screen-only">Quotes</h2>
+      <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">Logout</button>
     </div>
 
-    <!-- Saved Quotes List -->
-    <div id="quotesList" class="mb-6">
+    <!-- Saved Quotes List (hidden in print) -->
+    <div id="quotesList" class="mb-6 screen-only">
       <h3 class="font-semibold mb-2">Saved Quotes</h3>
       <ul id="quotesUl" class="border rounded p-2 text-sm"></ul>
     </div>
@@ -76,7 +63,7 @@
         </div>
       </div>
 
-      <div id="docTypeWrapper" class="mt-6">
+      <div id="docTypeWrapper" class="mt-6 screen-only">
         <label class="block font-semibold">Document Type</label>
         <select id="docType" class="border p-2 mt-1 rounded">
           <option value="quote">Quote</option>
@@ -84,32 +71,32 @@
         </select>
       </div>
 
-      <div id="dateWrapper" class="mt-4">
+      <div id="dateWrapper" class="mt-4 screen-only">
         <label class="block font-semibold">Date</label>
         <input type="date" id="invoiceDate" class="w-full border p-2 rounded mt-1" />
       </div>
 
       <div class="mt-4">
-        <label class="block font-semibold">Customer Name</label>
-        <input type="text" id="customerName" class="w-full border p-2 rounded mt-1" />
+        <label class="block font-semibold screen-only">Customer Name</label>
+        <input type="text" id="customerName" class="w-full border p-2 rounded mt-1 screen-only" />
         <p id="printCustomerName" class="print-only font-medium mt-1"></p>
       </div>
 
       <div class="mt-4">
-        <label class="block font-semibold">Customer Address</label>
-        <textarea id="customerAddress" class="w-full border p-2 rounded mt-1" rows="2"></textarea>
+        <label class="block font-semibold screen-only">Customer Address</label>
+        <textarea id="customerAddress" class="w-full border p-2 rounded mt-1 screen-only" rows="2"></textarea>
         <p id="printCustomerAddress" class="print-only font-medium whitespace-pre-line mt-1"></p>
       </div>
 
       <div class="mt-4">
-        <label class="block font-semibold">Job Description</label>
-        <textarea id="jobDetails" class="w-full border p-2 rounded mt-1" rows="4"></textarea>
+        <label class="block font-semibold screen-only">Job Description</label>
+        <textarea id="jobDetails" class="w-full border p-2 rounded mt-1 screen-only" rows="4"></textarea>
         <p id="printJobDetails" class="print-only whitespace-pre-line mt-1"></p>
       </div>
 
       <div class="mt-4">
-        <label class="block font-semibold">Costs</label>
-        <div id="lineItems" class="space-y-2 mt-2"></div>
+        <label class="block font-semibold screen-only">Costs</label>
+        <div id="lineItems" class="space-y-2 mt-2 screen-only"></div>
         <div id="printLineItems" class="print-only mt-4 whitespace-pre-line"></div>
         <button id="addCostButton" onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">Add Cost</button>
       </div>
@@ -119,8 +106,8 @@
       </div>
 
       <div class="mt-4">
-        <label class="block font-semibold">Notes</label>
-        <textarea id="notes" class="w-full border p-2 rounded mt-1" rows="2">Thank you for your business.</textarea>
+        <label class="block font-semibold screen-only">Notes</label>
+        <textarea id="notes" class="w-full border p-2 rounded mt-1 screen-only" rows="2">Thank you for your business.</textarea>
       </div>
 
       <div id="paymentDetails" class="mt-4 hidden">
@@ -133,11 +120,11 @@
         <p>07894013765</p>
       </div>
 
-      <div class="mt-6 flex gap-2">
-        <button onclick="generatePDF()" class="bg-green-600 text-white px-6 py-2 rounded screen-only">
+      <div class="mt-6 flex gap-2 screen-only">
+        <button onclick="generatePDF()" class="bg-green-600 text-white px-6 py-2 rounded">
           Download PDF
         </button>
-        <button id="saveQuoteBtn" class="bg-blue-600 text-white px-6 py-2 rounded screen-only">
+        <button id="saveQuoteBtn" class="bg-blue-600 text-white px-6 py-2 rounded">
           Save Quote
         </button>
       </div>
