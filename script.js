@@ -1,13 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Firebase config (fixed storageBucket)
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDFNBKaTviJNHp95gKqKgphwp3LHu9NCfs",
   authDomain: "brammeld-invoice.firebaseapp.com",
   projectId: "brammeld-invoice",
-  storageBucket: "brammeld-invoice.appspot.com", // FIXED
+  storageBucket: "brammeld-invoice.appspot.com",
   messagingSenderId: "380302735360",
   appId: "1:380302735360:web:f4efd9e4fd330a038640e5"
 };
@@ -26,28 +26,33 @@ let currentUserId = null;
 const loginSection = document.getElementById("loginSection");
 const appSection = document.getElementById("appSection");
 const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
+const loginText = document.getElementById("loginText");
+const loginSpinner = document.getElementById("loginSpinner");
 const loginError = document.getElementById("loginError");
+const logoutBtn = document.getElementById("logoutBtn");
 const quotesUl = document.getElementById("quotesUl");
 const saveQuoteBtn = document.getElementById("saveQuoteBtn");
 
-// Login
+// Login with spinner
 loginBtn.addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
+  loginError.classList.add("hidden");
+  loginText.innerText = "Logging in...";
+  loginSpinner.classList.remove("hidden");
   try {
-    loginError.classList.add("hidden");
     await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
     loginError.innerText = "Login failed: " + err.message;
     loginError.classList.remove("hidden");
   }
+  loginText.innerText = "Login";
+  loginSpinner.classList.add("hidden");
 });
 
 logoutBtn.addEventListener("click", () => signOut(auth));
 saveQuoteBtn.addEventListener("click", saveQuote);
 
-// Auth state
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
@@ -61,7 +66,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Load quotes for user
+// Load user quotes with delete & open confirmation
 async function loadQuotes() {
   quotesUl.innerHTML = "";
   const q = query(collection(db, "quotes"), where("userId", "==", currentUserId));
@@ -72,13 +77,31 @@ async function loadQuotes() {
     li.className = "flex justify-between items-center p-1 border-b";
     li.innerHTML = `
       <span>${data.number} - ${data.customerName}</span>
-      <button class="text-blue-600 text-sm" onclick="openQuote('${docSnap.id}')">Open</button>
+      <div class="space-x-2">
+        <button class="text-blue-600 text-sm" onclick="confirmOpen('${docSnap.id}')">Open</button>
+        <button class="text-red-600 text-sm" onclick="confirmDelete('${docSnap.id}')">Delete</button>
+      </div>
     `;
     quotesUl.appendChild(li);
   });
 }
 
-// Open a saved quote
+// Confirm before opening
+window.confirmOpen = function (id) {
+  if (confirm("Are you sure you want to open this quote? Unsaved changes will be lost.")) {
+    openQuote(id);
+  }
+};
+
+// Confirm delete
+window.confirmDelete = async function (id) {
+  if (confirm("Are you sure you want to delete this quote? This cannot be undone.")) {
+    await deleteDoc(doc(db, "quotes", id));
+    loadQuotes();
+  }
+};
+
+// Open quote
 window.openQuote = async function (id) {
   const docRef = doc(db, "quotes", id);
   const docSnap = await getDoc(docRef);
@@ -89,7 +112,6 @@ window.openQuote = async function (id) {
   }
 };
 
-// Save quote
 async function saveQuote() {
   const data = getFormData();
   data.userId = currentUserId;
@@ -103,7 +125,6 @@ async function saveQuote() {
   alert("Quote saved!");
 }
 
-// Helpers
 function getFormData() {
   const items = [];
   for (let i = 0; i < itemIndex; i++) {
