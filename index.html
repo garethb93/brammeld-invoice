@@ -40,7 +40,13 @@
     <h2 class="text-2xl font-bold mb-4">Login</h2>
     <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
     <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-2">
-    <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">Login</button>
+    <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded flex items-center justify-center">
+      <span id="loginText">Login</span>
+      <svg id="loginSpinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+      </svg>
+    </button>
     <p id="loginError" class="text-red-600 text-sm mt-2 hidden"></p>
   </div>
 
