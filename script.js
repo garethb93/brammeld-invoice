@@ -2,12 +2,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Firebase config
+// Firebase config (fixed storageBucket)
 const firebaseConfig = {
   apiKey: "AIzaSyDFNBKaTviJNHp95gKqKgphwp3LHu9NCfs",
   authDomain: "brammeld-invoice.firebaseapp.com",
   projectId: "brammeld-invoice",
-  storageBucket: "brammeld-invoice.appspot.app",
+  storageBucket: "brammeld-invoice.appspot.com", // FIXED
   messagingSenderId: "380302735360",
   appId: "1:380302735360:web:f4efd9e4fd330a038640e5"
 };
@@ -27,24 +27,27 @@ const loginSection = document.getElementById("loginSection");
 const appSection = document.getElementById("appSection");
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const loginError = document.getElementById("loginError");
 const quotesUl = document.getElementById("quotesUl");
 const saveQuoteBtn = document.getElementById("saveQuoteBtn");
 
-loginBtn.addEventListener("click", login);
-logoutBtn.addEventListener("click", () => signOut(auth));
-saveQuoteBtn.addEventListener("click", saveQuote);
-
-// Firebase Auth
-async function login() {
+// Login
+loginBtn.addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   try {
+    loginError.classList.add("hidden");
     await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
-    alert("Login failed: " + err.message);
+    loginError.innerText = "Login failed: " + err.message;
+    loginError.classList.remove("hidden");
   }
-}
+});
 
+logoutBtn.addEventListener("click", () => signOut(auth));
+saveQuoteBtn.addEventListener("click", saveQuote);
+
+// Auth state
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
@@ -58,7 +61,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Firebase Quotes
+// Load quotes for user
 async function loadQuotes() {
   quotesUl.innerHTML = "";
   const q = query(collection(db, "quotes"), where("userId", "==", currentUserId));
@@ -75,6 +78,7 @@ async function loadQuotes() {
   });
 }
 
+// Open a saved quote
 window.openQuote = async function (id) {
   const docRef = doc(db, "quotes", id);
   const docSnap = await getDoc(docRef);
@@ -85,6 +89,7 @@ window.openQuote = async function (id) {
   }
 };
 
+// Save quote
 async function saveQuote() {
   const data = getFormData();
   data.userId = currentUserId;
@@ -98,6 +103,7 @@ async function saveQuote() {
   alert("Quote saved!");
 }
 
+// Helpers
 function getFormData() {
   const items = [];
   for (let i = 0; i < itemIndex; i++) {
@@ -131,9 +137,7 @@ function fillForm(data) {
 
   document.getElementById("lineItems").innerHTML = "";
   itemIndex = 0;
-  data.items.forEach((item) => {
-    addItem(item.desc, item.qty, item.rate);
-  });
+  data.items.forEach((item) => addItem(item.desc, item.qty, item.rate));
   document.getElementById("totalAmount").innerText = data.total;
 }
 
