@@ -1,26 +1,166 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// Firebase config (YOURS)
+const firebaseConfig = {
+  apiKey: "AIzaSyDFNBKaTviJNHp95gKqKgphwp3LHu9NCfs",
+  authDomain: "brammeld-invoice.firebaseapp.com",
+  projectId: "brammeld-invoice",
+  storageBucket: "brammeld-invoice.firebasestorage.app",
+  messagingSenderId: "380302735360",
+  appId: "1:380302735360:web:f4efd9e4fd330a038640e5"
+};
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 let itemIndex = 0;
 let currentNumber = null;
+let editingId = null;
 
-function addItem() {
+// UI elements
+const loginSection = document.getElementById("loginSection");
+const appSection = document.getElementById("appSection");
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const quotesUl = document.getElementById("quotesUl");
+const saveQuoteBtn = document.getElementById("saveQuoteBtn");
+
+loginBtn.addEventListener("click", login);
+registerBtn.addEventListener("click", register);
+logoutBtn.addEventListener("click", () => signOut(auth));
+saveQuoteBtn.addEventListener("click", saveQuote);
+
+// Firebase Auth
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function register() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginSection.classList.add("hidden");
+    appSection.classList.remove("hidden");
+    loadQuotes();
+  } else {
+    loginSection.classList.remove("hidden");
+    appSection.classList.add("hidden");
+  }
+});
+
+// Firebase Quotes
+async function loadQuotes() {
+  quotesUl.innerHTML = "";
+  const querySnapshot = await getDocs(collection(db, "quotes"));
+  querySnapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const li = document.createElement("li");
+    li.className = "flex justify-between items-center p-1 border-b";
+    li.innerHTML = `
+      <span>${data.number} - ${data.customerName}</span>
+      <button class="text-blue-600 text-sm" onclick="openQuote('${docSnap.id}')">Open</button>
+    `;
+    quotesUl.appendChild(li);
+  });
+}
+
+window.openQuote = async function(id) {
+  const docRef = doc(db, "quotes", id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    editingId = id;
+    fillForm(data);
+  }
+}
+
+async function saveQuote() {
+  const data = getFormData();
+  if (editingId) {
+    await setDoc(doc(db, "quotes", editingId), data);
+  } else {
+    await addDoc(collection(db, "quotes"), data);
+  }
+  editingId = null;
+  loadQuotes();
+  alert("Quote saved!");
+}
+
+function getFormData() {
+  const items = [];
+  for (let i = 0; i < itemIndex; i++) {
+    const desc = document.getElementById(`desc-${i}`)?.value;
+    const qty = document.getElementById(`qty-${i}`)?.value;
+    const rate = document.getElementById(`rate-${i}`)?.value;
+    if (desc) {
+      items.push({ desc, qty, rate });
+    }
+  }
+  return {
+    number: currentNumber || formatNumber(document.getElementById("invoiceDate").value),
+    type: document.getElementById("docType").value,
+    date: document.getElementById("invoiceDate").value,
+    customerName: document.getElementById("customerName").value,
+    customerAddress: document.getElementById("customerAddress").value,
+    jobDetails: document.getElementById("jobDetails").value,
+    notes: document.getElementById("notes").value,
+    items,
+    total: document.getElementById("totalAmount").innerText
+  };
+}
+
+function fillForm(data) {
+  document.getElementById("docType").value = data.type;
+  document.getElementById("invoiceDate").value = data.date;
+  document.getElementById("customerName").value = data.customerName;
+  document.getElementById("customerAddress").value = data.customerAddress;
+  document.getElementById("jobDetails").value = data.jobDetails;
+  document.getElementById("notes").value = data.notes;
+
+  document.getElementById("lineItems").innerHTML = "";
+  itemIndex = 0;
+  data.items.forEach(item => {
+    addItem(item.desc, item.qty, item.rate);
+  });
+  document.getElementById("totalAmount").innerText = data.total;
+}
+
+function addItem(desc = "", qty = 1, rate = 0) {
   const container = document.getElementById("lineItems");
   const row = document.createElement("div");
   row.className = "flex gap-2";
 
   row.innerHTML = `
-    <input type="text" placeholder="Description" class="flex-1 border p-2 rounded" id="desc-${itemIndex}">
-    <input type="number" placeholder="Qty" class="w-20 border p-2 rounded" id="qty-${itemIndex}" value="1">
-    <input type="number" placeholder="Rate" class="w-24 border p-2 rounded" id="rate-${itemIndex}" value="0">
+    <input type="text" placeholder="Description" class="flex-1 border p-2 rounded" id="desc-${itemIndex}" value="${desc}">
+    <input type="number" placeholder="Qty" class="w-20 border p-2 rounded" id="qty-${itemIndex}" value="${qty}">
+    <input type="number" placeholder="Rate" class="w-24 border p-2 rounded" id="rate-${itemIndex}" value="${rate}">
     <button onclick="removeItem(this)" class="text-red-500 font-bold">X</button>
   `;
   container.appendChild(row);
   itemIndex++;
   updateTotal();
-  document.querySelectorAll("input").forEach(input => {
-    input.addEventListener("input", updateTotal);
-  });
 }
 
-function removeItem(button) {
+window.removeItem = function(button) {
   button.parentElement.remove();
   updateTotal();
 }
@@ -62,15 +202,13 @@ function setDocTypeDisplay() {
   document.getElementById("paymentDetails").classList.toggle("hidden", docType !== "invoice");
 }
 
-function generatePDF() {
+window.generatePDF = function() {
   const docType = document.getElementById("docType").value;
   const customerName = document.getElementById("customerName").value.trim();
   const dateValue = document.getElementById("invoiceDate").value;
 
-  // Generate number with date and 2 random digits
   currentNumber = formatNumber(dateValue);
 
-  // Update printable fields
   document.getElementById("printCustomerName").innerText = customerName;
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value.trim();
   document.getElementById("printDate").innerText = dateValue;
@@ -78,9 +216,7 @@ function generatePDF() {
   updateTotal();
   setDocTypeDisplay();
 
-  // Create filename
-  const safeName = customerName || "Customer";
-  const filename = `${docType === "invoice" ? "Invoice" : "Quote"}-${currentNumber}-${safeName}.pdf`;
+  const filename = `${docType === "invoice" ? "Invoice" : "Quote"}-${currentNumber}-${customerName || "Customer"}.pdf`;
 
   setTimeout(() => {
     document.title = filename;
@@ -89,5 +225,5 @@ function generatePDF() {
   }, 200);
 }
 
-// Init first cost row
+// init
 addItem();
