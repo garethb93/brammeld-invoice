@@ -51,16 +51,28 @@ function togglePaymentDetails() {
 }
 
 function generatePDF() {
-  document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value.trim();
+  const docType = document.getElementById("docType").value;
+  const customerName = document.getElementById("customerName").value.trim();
+  const dateValue = document.getElementById("invoiceDate").value;
+
+  // Update all printable fields
+  document.getElementById("printCustomerName").innerText = customerName;
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value.trim();
-  document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
+  document.getElementById("printDate").innerText = dateValue;
   document.getElementById("printJobDetails").innerText = document.getElementById("jobDetails").value.trim();
-  updateTotal(); // Ensures costs show
+  updateTotal();
   togglePaymentDetails();
 
-  // Slight delay ensures all content is updated before print
+  // Create filename: "Invoice - CustomerName - Date.pdf"
+  const formattedDate = dateValue || new Date().toISOString().split("T")[0];
+  const safeName = customerName || "Customer";
+  const filename = `${docType === "invoice" ? "Invoice" : "Quote"} - ${safeName} - ${formattedDate}.pdf`;
+
+  // Trigger print (browser's Save As PDF will show the filename)
   setTimeout(() => {
+    document.title = filename; // sets default filename in print dialog
     window.print();
+    document.title = "Brammeld Contracts - Invoice Builder"; // restore
   }, 200);
 }
 
