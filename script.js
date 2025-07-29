@@ -45,10 +45,11 @@ function updateTotal() {
   document.getElementById("printLineItems").innerText = output.trim();
 }
 
-function togglePaymentDetails() {
+function setDocTypeDisplay() {
   const docType = document.getElementById("docType").value;
-  const display = `${docType === "invoice" ? "Invoice" : "Quote"} ${currentNumber ? `#${currentNumber}` : ""}`;
-  document.getElementById("docTypeDisplay").innerText = display;
+  const numberText = currentNumber ? ` #${currentNumber}` : "";
+  document.getElementById("docTypeDisplay").innerText =
+    (docType === "invoice" ? "Invoice" : "Quote") + numberText;
   document.getElementById("paymentDetails").classList.toggle("hidden", docType !== "invoice");
 }
 
@@ -57,7 +58,7 @@ function generatePDF() {
   const customerName = document.getElementById("customerName").value.trim();
   const dateValue = document.getElementById("invoiceDate").value;
 
-  // Generate random number if not already generated
+  // Always generate a new number on each download
   currentNumber = Math.floor(1000 + Math.random() * 9000);
 
   // Update all printable fields
@@ -66,20 +67,19 @@ function generatePDF() {
   document.getElementById("printDate").innerText = dateValue;
   document.getElementById("printJobDetails").innerText = document.getElementById("jobDetails").value.trim();
   updateTotal();
-  togglePaymentDetails();
+  setDocTypeDisplay();
 
-  // Create filename: "Invoice - CustomerName - Date.pdf"
+  // Create filename
   const formattedDate = dateValue || new Date().toISOString().split("T")[0];
   const safeName = customerName || "Customer";
   const filename = `${docType === "invoice" ? "Invoice" : "Quote"}-${currentNumber}-${safeName}-${formattedDate}.pdf`;
 
-  // Trigger print (browser's Save As PDF will show the filename)
   setTimeout(() => {
-    document.title = filename; // sets default filename in print dialog
+    document.title = filename;
     window.print();
-    document.title = "Brammeld Contracts - Invoice Builder"; // restore
+    document.title = "Brammeld Contracts - Invoice Builder";
   }, 200);
 }
 
-// Init first cost row
+// Init first row
 addItem();
