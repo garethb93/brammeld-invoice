@@ -1,4 +1,5 @@
 let itemIndex = 0;
+let currentNumber = null;
 
 function addItem() {
   const container = document.getElementById("lineItems");
@@ -46,14 +47,18 @@ function updateTotal() {
 
 function togglePaymentDetails() {
   const docType = document.getElementById("docType").value;
+  const display = `${docType === "invoice" ? "Invoice" : "Quote"} ${currentNumber ? `#${currentNumber}` : ""}`;
+  document.getElementById("docTypeDisplay").innerText = display;
   document.getElementById("paymentDetails").classList.toggle("hidden", docType !== "invoice");
-  document.getElementById("docTypeDisplay").innerText = docType === "invoice" ? "Invoice" : "Quote";
 }
 
 function generatePDF() {
   const docType = document.getElementById("docType").value;
   const customerName = document.getElementById("customerName").value.trim();
   const dateValue = document.getElementById("invoiceDate").value;
+
+  // Generate random number if not already generated
+  currentNumber = Math.floor(1000 + Math.random() * 9000);
 
   // Update all printable fields
   document.getElementById("printCustomerName").innerText = customerName;
@@ -66,7 +71,7 @@ function generatePDF() {
   // Create filename: "Invoice - CustomerName - Date.pdf"
   const formattedDate = dateValue || new Date().toISOString().split("T")[0];
   const safeName = customerName || "Customer";
-  const filename = `${docType === "invoice" ? "Invoice" : "Quote"} - ${safeName} - ${formattedDate}.pdf`;
+  const filename = `${docType === "invoice" ? "Invoice" : "Quote"}-${currentNumber}-${safeName}-${formattedDate}.pdf`;
 
   // Trigger print (browser's Save As PDF will show the filename)
   setTimeout(() => {
