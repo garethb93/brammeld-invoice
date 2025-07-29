@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Firebase config (YOURS)
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDFNBKaTviJNHp95gKqKgphwp3LHu9NCfs",
   authDomain: "brammeld-invoice.firebaseapp.com",
@@ -20,18 +20,17 @@ const db = getFirestore(app);
 let itemIndex = 0;
 let currentNumber = null;
 let editingId = null;
+let currentUserId = null;
 
 // UI elements
 const loginSection = document.getElementById("loginSection");
 const appSection = document.getElementById("appSection");
 const loginBtn = document.getElementById("loginBtn");
-const registerBtn = document.getElementById("registerBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const quotesUl = document.getElementById("quotesUl");
 const saveQuoteBtn = document.getElementById("saveQuoteBtn");
 
 loginBtn.addEventListener("click", login);
-registerBtn.addEventListener("click", register);
 logoutBtn.addEventListener("click", () => signOut(auth));
 saveQuoteBtn.addEventListener("click", saveQuote);
 
@@ -42,26 +41,18 @@ async function login() {
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function register() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-  } catch (err) {
-    alert(err.message);
+    alert("Login failed: " + err.message);
   }
 }
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
+    currentUserId = user.uid;
     loginSection.classList.add("hidden");
     appSection.classList.remove("hidden");
     loadQuotes();
   } else {
+    currentUserId = null;
     loginSection.classList.remove("hidden");
     appSection.classList.add("hidden");
   }
@@ -70,7 +61,8 @@ onAuthStateChanged(auth, (user) => {
 // Firebase Quotes
 async function loadQuotes() {
   quotesUl.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "quotes"));
+  const q = query(collection(db, "quotes"), where("userId", "==", currentUserId));
+  const querySnapshot = await getDocs(q);
   querySnapshot.forEach((docSnap) => {
     const data = docSnap.data();
     const li = document.createElement("li");
@@ -83,7 +75,7 @@ async function loadQuotes() {
   });
 }
 
-window.openQuote = async function(id) {
+window.openQuote = async function (id) {
   const docRef = doc(db, "quotes", id);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
@@ -91,10 +83,11 @@ window.openQuote = async function(id) {
     editingId = id;
     fillForm(data);
   }
-}
+};
 
 async function saveQuote() {
   const data = getFormData();
+  data.userId = currentUserId;
   if (editingId) {
     await setDoc(doc(db, "quotes", editingId), data);
   } else {
@@ -138,7 +131,7 @@ function fillForm(data) {
 
   document.getElementById("lineItems").innerHTML = "";
   itemIndex = 0;
-  data.items.forEach(item => {
+  data.items.forEach((item) => {
     addItem(item.desc, item.qty, item.rate);
   });
   document.getElementById("totalAmount").innerText = data.total;
@@ -160,10 +153,10 @@ function addItem(desc = "", qty = 1, rate = 0) {
   updateTotal();
 }
 
-window.removeItem = function(button) {
+window.removeItem = function (button) {
   button.parentElement.remove();
   updateTotal();
-}
+};
 
 function updateTotal() {
   let total = 0;
@@ -202,7 +195,7 @@ function setDocTypeDisplay() {
   document.getElementById("paymentDetails").classList.toggle("hidden", docType !== "invoice");
 }
 
-window.generatePDF = function() {
+window.generatePDF = function () {
   const docType = document.getElementById("docType").value;
   const customerName = document.getElementById("customerName").value.trim();
   const dateValue = document.getElementById("invoiceDate").value;
@@ -223,7 +216,7 @@ window.generatePDF = function() {
     window.print();
     document.title = "Brammeld Contracts - Invoice Builder";
   }, 200);
-}
+};
 
 // init
 addItem();
