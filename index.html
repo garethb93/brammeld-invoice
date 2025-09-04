@@ -8,21 +8,13 @@
   <script type="module" src="script.js"></script>
   <style>
     @media print {
-      .screen-only {
-        display: none !important;
-      }
-      .print-only {
-        display: block !important;
-      }
+      .screen-only { display: none !important; }
+      .print-only { display: block !important; }
     }
-    .print-only {
-      display: none;
-    }
+    .print-only { display: none; }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4">
-
-  <!-- Login Section -->
   <div id="loginSection" class="max-w-md mx-auto bg-white shadow-lg p-6 rounded-md">
     <h2 class="text-2xl font-bold mb-4">Login</h2>
     <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
@@ -37,20 +29,17 @@
     <p id="loginError" class="text-red-600 text-sm mt-2 hidden"></p>
   </div>
 
-  <!-- Main App Section -->
   <div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
     <div class="flex justify-between mb-4">
       <h2 class="text-xl font-bold screen-only">Quotes</h2>
       <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">Logout</button>
     </div>
 
-    <!-- Saved Quotes List (hidden in print) -->
     <div id="quotesList" class="mb-6 screen-only">
       <h3 class="font-semibold mb-2">Saved Quotes</h3>
       <ul id="quotesUl" class="border rounded p-2 text-sm"></ul>
     </div>
 
-    <!-- Invoice Builder -->
     <div id="builder">
       <div class="flex items-center justify-between">
         <img src="logo.png" alt="Logo" class="h-32 max-w-[200px] object-contain" />
@@ -98,7 +87,7 @@
         <label class="block font-semibold screen-only">Costs</label>
         <div id="lineItems" class="space-y-2 mt-2 screen-only"></div>
         <div id="printLineItems" class="print-only mt-4 whitespace-pre-line"></div>
-        <button id="addCostButton" onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">Add Cost</button>
+        <button id="addCostButton" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">Add Cost</button>
       </div>
 
       <div class="mt-4 font-bold text-lg">
@@ -122,12 +111,8 @@
       </div>
 
       <div class="mt-6 flex gap-2 screen-only">
-        <button onclick="generatePDF()" class="bg-green-600 text-white px-6 py-2 rounded">
-          Download PDF
-        </button>
-        <button id="saveQuoteBtn" class="bg-blue-600 text-white px-6 py-2 rounded">
-          Save Quote
-        </button>
+        <button id="generatePDFBtn" class="bg-green-600 text-white px-6 py-2 rounded">Download PDF</button>
+        <button id="saveQuoteBtn" class="bg-blue-600 text-white px-6 py-2 rounded">Save Quote</button>
       </div>
     </div>
   </div>
