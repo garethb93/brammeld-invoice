@@ -34,10 +34,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const db = getFirestore();
 
-let itemIndex = 0;
 let currentUserId = null;
 
-// ✅ DOM
+// ✅ Elements
 const loginSection = document.getElementById("loginSection");
 const appSection = document.getElementById("appSection");
 const loginBtn = document.getElementById("loginBtn");
@@ -45,8 +44,9 @@ const logoutBtn = document.getElementById("logoutBtn");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 const quotesUl = document.getElementById("savedQuotes");
+const lineItems = document.getElementById("lineItems");
 
-// ✅ Auth Listener
+// ✅ Auth State
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
@@ -76,35 +76,34 @@ logoutBtn.addEventListener("click", async () => {
 
 // ✅ Add Item
 function addItem(desc = "", qty = 1, rate = 0) {
-  const container = document.getElementById("lineItems");
   const row = document.createElement("div");
+  row.classList.add("itemRow");
   row.innerHTML = `
     <input placeholder="Description" value="${desc}">
     <input type="number" value="${qty}" min="1">
     <input type="number" value="${rate}" min="0">
-    <button onclick="removeItem(this)">❌</button>
+    <button class="removeBtn">❌</button>
   `;
-  container.appendChild(row);
-  itemIndex++;
+  lineItems.appendChild(row);
+  row.querySelector(".removeBtn").addEventListener("click", () => {
+    row.remove();
+    updateTotal();
+  });
+  row.querySelectorAll("input").forEach(input =>
+    input.addEventListener("input", updateTotal)
+  );
   updateTotal();
 }
-
-// ✅ Remove Item
-window.removeItem = function (el) {
-  el.parentElement.remove();
-  updateTotal();
-};
 
 // ✅ Update Total
 function updateTotal() {
   let total = 0;
   let output = "";
-  const container = document.getElementById("lineItems");
-  [...container.children].forEach(row => {
+  [...lineItems.children].forEach(row => {
     const [descEl, qtyEl, rateEl] = row.querySelectorAll("input");
     const desc = descEl.value;
-    const qty = parseFloat(qtyEl.value);
-    const rate = parseFloat(rateEl.value);
+    const qty = parseFloat(qtyEl.value) || 0;
+    const rate = parseFloat(rateEl.value) || 0;
     const subtotal = qty * rate;
     total += subtotal;
     output += `${desc} (x${qty} @ £${rate.toFixed(2)}) = £${subtotal.toFixed(2)}\n`;
@@ -113,17 +112,17 @@ function updateTotal() {
   document.getElementById("totalAmount").innerText = total.toFixed(2);
 }
 
-// ✅ Generate Number
+// ✅ Format Number
 function formatNumber(dateStr) {
   const date = dateStr ? new Date(dateStr) : new Date();
-  const d = String(date.getDate()).padStart(2, "0");
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const y = String(date.getFullYear()).slice(-2);
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yy = String(date.getFullYear()).slice(-2);
   const rand = String(Math.floor(Math.random() * 90 + 10));
-  return `${d}${m}${y}-${rand}`;
+  return `${dd}${mm}${yy}-${rand}`;
 }
 
-// ✅ Download PDF
+// ✅ Generate PDF
 window.generatePDF = () => {
   const docType = document.getElementById("docType").value;
   const customerName = document.getElementById("customerName").value.trim();
@@ -150,15 +149,13 @@ window.generatePDF = () => {
 
 // ✅ Get Form Data
 function getFormData() {
-  const items = [];
-  const container = document.getElementById("lineItems");
-  [...container.children].forEach(row => {
+  const items = [...lineItems.children].map(row => {
     const [descEl, qtyEl, rateEl] = row.querySelectorAll("input");
-    items.push({
+    return {
       description: descEl.value,
       quantity: qtyEl.value,
       rate: rateEl.value
-    });
+    };
   });
 
   return {
@@ -190,27 +187,37 @@ async function loadQuotes() {
   snapshot.forEach(doc => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <button onclick="confirmOpen('${doc.id}')">${doc.data().customerName || "Untitled"}</button>
-      <button onclick="confirmDelete('${doc.id}')">🗑️</button>
+      <button data-id="${doc.id}" class="openBtn">${doc.data().customerName || "Untitled"}</button>
+      <button data-id="${doc.id}" class="deleteBtn">🗑️</button>
     `;
     quotesUl.appendChild(li);
   });
+
+  // Attach listeners after render
+  document.querySelectorAll(".openBtn").forEach(btn =>
+    btn.addEventListener("click", () => confirmOpen(btn.dataset.id))
+  );
+  document.querySelectorAll(".deleteBtn").forEach(btn =>
+    btn.addEventListener("click", () => confirmDelete(btn.dataset.id))
+  );
 }
 
 // ✅ Confirm Open
-window.confirmOpen = function (id) {
-  if (confirm("Open this quote? Unsaved changes will be lost.")) openQuote(id);
-};
+function confirmOpen(id) {
+  if (confirm("Open this quote? Unsaved changes will be lost.")) {
+    openQuote(id);
+  }
+}
 
 // ✅ Confirm Delete
-window.confirmDelete = async function (id) {
-  if (confirm("Are you sure you want to delete this quote?")) {
+async function confirmDelete(id) {
+  if (confirm("Delete this quote permanently?")) {
     await deleteDoc(doc(db, "quotes", id));
     loadQuotes();
   }
-};
+}
 
-// ✅ Open Saved
+// ✅ Open Saved Quote
 async function openQuote(id) {
   const snap = await getDoc(doc(db, "quotes", id));
   if (snap.exists()) {
@@ -222,12 +229,13 @@ async function openQuote(id) {
     document.getElementById("jobDescription").value = data.jobDescription;
     document.getElementById("notes").value = data.notes || "";
 
-    const container = document.getElementById("lineItems");
-    container.innerHTML = "";
-    data.items.forEach(item => addItem(item.description, item.quantity, item.rate));
+    lineItems.innerHTML = "";
+    data.items.forEach(item =>
+      addItem(item.description, item.quantity, item.rate)
+    );
     updateTotal();
   }
 }
 
-// ✅ Add initial item
+// ✅ Start
 addItem();
