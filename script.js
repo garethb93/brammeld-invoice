@@ -1,18 +1,36 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+// ✅ script.js
 
-// Firebase config
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// 🚨 Replace this with your NEW Firebase config if you deleted your project:
 const firebaseConfig = {
-  apiKey: "AIzaSyDFNBKaTviJNHp95gKqKgphwp3LHu9NCfs",
-  authDomain: "brammeld-invoice.firebaseapp.com",
-  projectId: "brammeld-invoice",
-  storageBucket: "brammeld-invoice.appspot.com",
-  messagingSenderId: "380302735360",
-  appId: "1:380302735360:web:f4efd9e4fd330a038640e5"
+  apiKey: "YOUR_NEW_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_ID",
+  appId: "YOUR_APP_ID"
 };
 
-// Init Firebase
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -22,7 +40,7 @@ let currentNumber = null;
 let editingId = null;
 let currentUserId = null;
 
-// UI elements
+// ✅ Login functionality
 const loginSection = document.getElementById("loginSection");
 const appSection = document.getElementById("appSection");
 const loginBtn = document.getElementById("loginBtn");
@@ -33,7 +51,6 @@ const logoutBtn = document.getElementById("logoutBtn");
 const quotesUl = document.getElementById("quotesUl");
 const saveQuoteBtn = document.getElementById("saveQuoteBtn");
 
-// Login with spinner
 loginBtn.addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -66,7 +83,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// Load user quotes with delete & open confirmation
+// ✅ Load saved quotes
 async function loadQuotes() {
   quotesUl.innerHTML = "";
   const q = query(collection(db, "quotes"), where("userId", "==", currentUserId));
@@ -86,14 +103,14 @@ async function loadQuotes() {
   });
 }
 
-// Confirm before opening
+// ✅ Confirm before opening
 window.confirmOpen = function (id) {
   if (confirm("Are you sure you want to open this quote? Unsaved changes will be lost.")) {
     openQuote(id);
   }
 };
 
-// Confirm delete
+// ✅ Confirm before deleting
 window.confirmDelete = async function (id) {
   if (confirm("Are you sure you want to delete this quote? This cannot be undone.")) {
     await deleteDoc(doc(db, "quotes", id));
@@ -101,7 +118,7 @@ window.confirmDelete = async function (id) {
   }
 };
 
-// Open quote
+// ✅ Open saved quote
 window.openQuote = async function (id) {
   const docRef = doc(db, "quotes", id);
   const docSnap = await getDoc(docRef);
@@ -112,6 +129,7 @@ window.openQuote = async function (id) {
   }
 };
 
+// ✅ Save quote to Firebase
 async function saveQuote() {
   const data = getFormData();
   data.userId = currentUserId;
@@ -125,6 +143,7 @@ async function saveQuote() {
   alert("Quote saved!");
 }
 
+// ✅ Get form data
 function getFormData() {
   const items = [];
   for (let i = 0; i < itemIndex; i++) {
@@ -148,6 +167,7 @@ function getFormData() {
   };
 }
 
+// ✅ Fill form when opening saved quote
 function fillForm(data) {
   document.getElementById("docType").value = data.type;
   document.getElementById("invoiceDate").value = data.date;
@@ -162,6 +182,7 @@ function fillForm(data) {
   document.getElementById("totalAmount").innerText = data.total;
 }
 
+// ✅ Add item
 function addItem(desc = "", qty = 1, rate = 0) {
   const container = document.getElementById("lineItems");
   const row = document.createElement("div");
@@ -178,11 +199,13 @@ function addItem(desc = "", qty = 1, rate = 0) {
   updateTotal();
 }
 
+// ✅ Remove item
 window.removeItem = function (button) {
   button.parentElement.remove();
   updateTotal();
 };
 
+// ✅ Update total
 function updateTotal() {
   let total = 0;
   let output = "";
@@ -203,6 +226,7 @@ function updateTotal() {
   document.getElementById("printLineItems").innerText = output.trim();
 }
 
+// ✅ Generate 8-digit number based on date + random
 function formatNumber(dateStr) {
   const date = dateStr ? new Date(dateStr) : new Date();
   const dd = String(date.getDate()).padStart(2, "0");
@@ -220,6 +244,7 @@ function setDocTypeDisplay() {
   document.getElementById("paymentDetails").classList.toggle("hidden", docType !== "invoice");
 }
 
+// ✅ Download PDF
 window.generatePDF = function () {
   const docType = document.getElementById("docType").value;
   const customerName = document.getElementById("customerName").value.trim();
@@ -244,5 +269,5 @@ window.generatePDF = function () {
   }, 200);
 };
 
-// init
+// ✅ Add initial item row
 addItem();
