@@ -43,7 +43,7 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
-const quotesUl = document.getElementById("savedQuotes");
+const quotesUl = document.getElementById("quotesUl");
 const lineItems = document.getElementById("lineItems");
 
 // ✅ Auth State
@@ -62,11 +62,15 @@ onAuthStateChanged(auth, (user) => {
 
 // ✅ Login
 loginBtn.addEventListener("click", async () => {
+  document.getElementById("loginSpinner").classList.remove("hidden");
+  document.getElementById("loginText").textContent = "Logging in...";
   try {
     await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
   } catch (e) {
     alert("Login failed: " + e.message);
   }
+  document.getElementById("loginSpinner").classList.add("hidden");
+  document.getElementById("loginText").textContent = "Login";
 });
 
 // ✅ Logout
@@ -122,21 +126,30 @@ function formatNumber(dateStr) {
   return `${dd}${mm}${yy}-${rand}`;
 }
 
+// ✅ Toggle payment details if invoice selected
+function setDocTypeDisplay() {
+  const docType = document.getElementById("docType").value;
+  const paymentDetails = document.getElementById("paymentDetails");
+  paymentDetails.classList.toggle("hidden", docType !== "invoice");
+}
+
+document.getElementById("docType").addEventListener("change", setDocTypeDisplay);
+
 // ✅ Generate PDF
 window.generatePDF = () => {
   const docType = document.getElementById("docType").value;
   const customerName = document.getElementById("customerName").value.trim();
   const address = document.getElementById("customerAddress").value.trim();
-  const job = document.getElementById("jobDescription").value.trim();
+  const job = document.getElementById("jobDetails").value.trim();
   const notes = document.getElementById("notes").value.trim();
   const date = document.getElementById("invoiceDate").value.trim();
   const number = formatNumber(date);
 
-  document.getElementById("printDocType").innerText = `${docType} #${number}`;
+  document.getElementById("docTypeDisplay").innerText = `${docType} #${number}`;
   document.getElementById("printDate").innerText = date;
   document.getElementById("printCustomerName").innerText = customerName;
   document.getElementById("printCustomerAddress").innerText = address;
-  document.getElementById("printJobDescription").innerText = job;
+  document.getElementById("printJobDetails").innerText = job;
   document.getElementById("printNotes").innerText = notes;
 
   document.body.classList.add("print-view");
@@ -163,7 +176,7 @@ function getFormData() {
     date: document.getElementById("invoiceDate").value.trim(),
     customerName: document.getElementById("customerName").value.trim(),
     customerAddress: document.getElementById("customerAddress").value.trim(),
-    jobDescription: document.getElementById("jobDescription").value.trim(),
+    jobDescription: document.getElementById("jobDetails").value.trim(),
     items,
     total: document.getElementById("totalAmount").innerText,
     notes: document.getElementById("notes").value.trim()
@@ -226,7 +239,7 @@ async function openQuote(id) {
     document.getElementById("invoiceDate").value = data.date;
     document.getElementById("customerName").value = data.customerName;
     document.getElementById("customerAddress").value = data.customerAddress;
-    document.getElementById("jobDescription").value = data.jobDescription;
+    document.getElementById("jobDetails").value = data.jobDescription;
     document.getElementById("notes").value = data.notes || "";
 
     lineItems.innerHTML = "";
@@ -234,8 +247,10 @@ async function openQuote(id) {
       addItem(item.description, item.quantity, item.rate)
     );
     updateTotal();
+    setDocTypeDisplay();
   }
 }
 
 // ✅ Start
 addItem();
+setDocTypeDisplay();
