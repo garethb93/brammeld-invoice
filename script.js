@@ -140,7 +140,13 @@ window.generatePDF = () => {
   document.getElementById("printJobDetails").innerText = job;
   document.getElementById("printNotes").innerText = notes;
 
-  document.getElementById("paymentDetails").classList.toggle("hidden", docType !== "invoice");
+  // 🔴 THIS IS THE ONLY THING ADDED
+  if (docType === "Invoice") {
+    document.getElementById("paymentDetails").innerText = "Payment due within 30 days";
+    document.getElementById("paymentDetails").classList.remove("hidden");
+  } else {
+    document.getElementById("paymentDetails").classList.add("hidden");
+  }
 
   document.body.classList.add("print-view");
 
@@ -236,7 +242,12 @@ async function openQuote(id) {
       addItem(item.description, item.quantity, item.rate)
     );
     updateTotal();
-    document.getElementById("paymentDetails").classList.toggle("hidden", data.type !== "invoice");
+
+    if (data.type === "Invoice") {
+      document.getElementById("paymentDetails").classList.remove("hidden");
+    } else {
+      document.getElementById("paymentDetails").classList.add("hidden");
+    }
   }
 }
 
