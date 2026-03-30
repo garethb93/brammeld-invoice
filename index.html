@@ -4,126 +4,148 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Brammeld Contracts - Invoice Builder</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="module" src="script.js"></script>
+
   <style>
     @media print {
-      .screen-only {
-        display: none !important;
-      }
-      .print-only {
-        display: block !important;
-      }
+      .screen-only { display: none !important; }
+      .print-only { display: block !important; }
     }
-    .print-only {
-      display: none;
-    }
+    .print-only { display: none; }
   </style>
 </head>
+
 <body class="bg-gray-100 text-gray-800 p-4">
 
-  <!-- Login Section -->
-  <div id="loginSection" class="max-w-md mx-auto bg-white shadow-lg p-6 rounded-md">
-    <h2 class="text-2xl font-bold mb-4">Login</h2>
-    <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
-    <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-2">
-    <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded flex items-center justify-center">
-      <span id="loginText">Login</span>
-      <svg id="loginSpinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-      </svg>
+<!-- LOGIN -->
+<div id="loginSection" class="max-w-md mx-auto bg-white shadow-lg p-6 rounded-md">
+  <h2 class="text-2xl font-bold mb-4">Login</h2>
+
+  <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
+  <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-2">
+
+  <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">
+    Login
+  </button>
+
+  <p id="loginError" class="text-red-600 text-sm mt-2 hidden"></p>
+</div>
+
+<!-- APP -->
+<div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
+
+  <div class="flex justify-between mb-4">
+    <h2 class="text-xl font-bold screen-only">Quotes</h2>
+    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">
+      Logout
     </button>
-    <p id="loginError" class="text-red-600 text-sm mt-2 hidden"></p>
   </div>
 
-  <!-- App Section -->
-  <div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
-    <div class="flex justify-between mb-4">
-      <h2 class="text-xl font-bold screen-only">Quotes</h2>
-      <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">Logout</button>
-    </div>
+  <!-- SAVED QUOTES -->
+  <div id="quotesList" class="mb-6 screen-only">
+    <h3 class="font-semibold mb-2">Saved Quotes</h3>
+    <ul id="savedQuotes" class="border rounded p-2 text-sm"></ul>
+  </div>
 
-    <div class="mb-6 screen-only">
-      <h3 class="font-semibold mb-2">Saved Quotes</h3>
-      <ul id="quotesUl" class="border rounded p-2 text-sm"></ul>
-    </div>
+  <!-- BUILDER -->
+  <div id="builder">
 
-    <div>
-      <div class="flex justify-between">
-        <img src="logo.png" class="h-32 max-w-[200px] object-contain" />
-        <div class="text-right">
-          <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
-          <p>brammeldcontracts@hotmail.com</p>
-          <p>07894013765</p>
-          <p id="docTypeDisplay" class="text-xl font-semibold mt-2 print-only"></p>
-          <p id="printDate" class="text-sm print-only"></p>
-        </div>
-      </div>
+    <!-- HEADER -->
+    <div class="flex items-center justify-between">
+      <img src="logo.png" class="h-32 max-w-[200px] object-contain">
 
-      <div class="mt-6 screen-only">
-        <label class="block font-semibold">Document Type</label>
-        <select id="docType" class="border p-2 mt-1 rounded" onchange="setDocTypeDisplay()">
-          <option value="quote">Quote</option>
-          <option value="invoice">Invoice</option>
-        </select>
-      </div>
-
-      <div class="mt-4 screen-only">
-        <label class="block font-semibold">Date</label>
-        <input type="date" id="invoiceDate" class="w-full border p-2 rounded mt-1" />
-      </div>
-
-      <div class="mt-4">
-        <label class="block font-semibold screen-only">Customer Name</label>
-        <input type="text" id="customerName" class="w-full border p-2 rounded mt-1 screen-only" />
-        <p id="printCustomerName" class="print-only font-medium mt-1"></p>
-      </div>
-
-      <div class="mt-4">
-        <label class="block font-semibold screen-only">Customer Address</label>
-        <textarea id="customerAddress" class="w-full border p-2 rounded mt-1 screen-only" rows="2"></textarea>
-        <p id="printCustomerAddress" class="print-only font-medium whitespace-pre-line mt-1"></p>
-      </div>
-
-      <div class="mt-4">
-        <label class="block font-semibold screen-only">Job Description</label>
-        <textarea id="jobDetails" class="w-full border p-2 rounded mt-1 screen-only" rows="4"></textarea>
-        <p id="printJobDetails" class="print-only whitespace-pre-line mt-1"></p>
-      </div>
-
-      <div class="mt-4">
-        <label class="block font-semibold screen-only">Costs</label>
-        <div id="lineItems" class="space-y-2 mt-2 screen-only"></div>
-        <div id="printLineItems" class="print-only mt-4 whitespace-pre-line"></div>
-        <button onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">Add Cost</button>
-      </div>
-
-      <div class="mt-4 font-bold text-lg">
-        Total: £<span id="totalAmount">0.00</span>
-      </div>
-
-      <div class="mt-4">
-        <label class="block font-semibold screen-only">Notes</label>
-        <textarea id="notes" class="w-full border p-2 rounded mt-1 screen-only" rows="2">Thank you for your business.</textarea>
-        <p id="printNotes" class="print-only whitespace-pre-line mt-1"></p>
-      </div>
-
-      <div id="paymentDetails" class="mt-4 hidden">
-        <h2 class="font-bold mt-6">Payment Details:</h2>
-        <p>BRAMMELD CONTRACTS</p>
-        <p>Monzo</p>
-        <p>Sort Code: 04-00-03</p>
-        <p>Account Number: 1408 1712</p>
+      <div class="text-right">
+        <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
         <p>brammeldcontracts@hotmail.com</p>
         <p>07894013765</p>
-      </div>
 
-      <div class="mt-6 flex gap-2 screen-only">
-        <button onclick="generatePDF()" class="bg-green-600 text-white px-6 py-2 rounded">Download PDF</button>
-        <button id="saveQuoteBtn" class="bg-blue-600 text-white px-6 py-2 rounded">Save Quote</button>
+        <!-- PRINT HEADER -->
+        <p id="printDocType" class="text-xl font-semibold mt-2 print-only"></p>
+        <p id="printDate" class="text-sm print-only"></p>
+
+        <!-- 🔴 THIS IS THE NEW 30-DAY PAYMENT LINE -->
+        <p id="paymentTerms" class="text-sm font-bold mt-1 print-only"></p>
+
       </div>
     </div>
+
+    <!-- DOC TYPE -->
+    <div class="mt-6 screen-only">
+      <label class="block font-semibold">Document Type</label>
+      <select id="docType" class="border p-2 mt-1 rounded">
+        <option value="Quote">Quote</option>
+        <option value="Invoice">Invoice</option>
+      </select>
+    </div>
+
+    <!-- DATE -->
+    <div class="mt-4 screen-only">
+      <label class="block font-semibold">Date</label>
+      <input type="date" id="invoiceDate" class="w-full border p-2 rounded mt-1" />
+    </div>
+
+    <!-- CUSTOMER -->
+    <div class="mt-4">
+      <label class="block font-semibold screen-only">Customer Name</label>
+      <input type="text" id="customerName" class="w-full border p-2 rounded mt-1 screen-only" />
+      <p id="printCustomerName" class="print-only font-medium mt-1"></p>
+    </div>
+
+    <div class="mt-4">
+      <label class="block font-semibold screen-only">Customer Address</label>
+      <textarea id="customerAddress" class="w-full border p-2 rounded mt-1 screen-only"></textarea>
+      <p id="printCustomerAddress" class="print-only whitespace-pre-line mt-1"></p>
+    </div>
+
+    <!-- JOB -->
+    <div class="mt-4">
+      <label class="block font-semibold screen-only">Job Description</label>
+      <textarea id="jobDescription" class="w-full border p-2 rounded mt-1 screen-only"></textarea>
+      <p id="printJobDescription" class="print-only whitespace-pre-line mt-1"></p>
+    </div>
+
+    <!-- COSTS -->
+    <div class="mt-4">
+      <label class="block font-semibold screen-only">Costs</label>
+
+      <div id="lineItems" class="space-y-2 mt-2 screen-only"></div>
+      <div id="printLineItems" class="print-only mt-4 whitespace-pre-line"></div>
+
+      <button onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">
+        Add Cost
+      </button>
+    </div>
+
+    <!-- TOTAL -->
+    <div class="mt-4 font-bold text-lg">
+      Total: £<span id="totalAmount">0.00</span>
+    </div>
+
+    <!-- NOTES -->
+    <div class="mt-4">
+      <label class="block font-semibold screen-only">Notes</label>
+      <textarea id="notes" class="w-full border p-2 rounded mt-1 screen-only">
+Thank you for your business.
+      </textarea>
+
+      <p id="printNotes" class="print-only whitespace-pre-line mt-1"></p>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="mt-6 flex gap-2 screen-only">
+      <button onclick="generatePDF()" class="bg-green-600 text-white px-6 py-2 rounded">
+        Download PDF
+      </button>
+
+      <button onclick="saveQuote()" class="bg-blue-600 text-white px-6 py-2 rounded">
+        Save Quote
+      </button>
+    </div>
+
   </div>
+</div>
+
 </body>
 </html>
