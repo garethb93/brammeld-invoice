@@ -18,7 +18,7 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let customersList = [];
 
-// --- Authentication ---
+// --- Auth ---
 window.handleLogin = async () => {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -42,7 +42,7 @@ function initApp() {
     setupCustomerSearch();
 }
 
-// --- App Logic ---
+// --- Logic ---
 window.setDocType = (type) => {
     currentDocType = type;
     document.getElementById('doc-title').innerText = type;
@@ -58,8 +58,8 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
         <td class="p-2"><textarea class="w-full bg-transparent outline-none item-desc" rows="1">${desc}</textarea></td>
         <td class="p-2"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
         <td class="p-2"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
-        <td class="p-2 font-bold text-right line-total">£0.00</td>
-        <td class="p-2 no-print text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-bold">×</button></td>
+        <td class="p-2 font-bold text-right line-total text-slate-700">£0.00</td>
+        <td class="p-2 no-print text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black px-2">×</button></td>
     `;
     tbody.appendChild(row);
     calculateTotals();
@@ -79,12 +79,16 @@ window.calculateTotals = () => {
 
 // --- History & Delete ---
 window.deleteQuote = async (id, event) => {
-    event.stopPropagation(); // Stop row click from triggering
-    if (!confirm("Are you sure you want to delete this?")) return;
-    try {
-        await deleteDoc(doc(db, "quotes", id));
-        loadHistory();
-    } catch (e) { alert("Error: " + e.message); }
+    event.stopPropagation(); 
+    // Manual confirmation alert
+    const confirmed = window.confirm("ARE YOU SURE?\nThis will permanently delete this record from the database.");
+    
+    if (confirmed) {
+        try {
+            await deleteDoc(doc(db, "quotes", id));
+            loadHistory();
+        } catch (e) { alert("Delete failed: " + e.message); }
+    }
 };
 
 window.loadDocumentIntoForm = (data) => {
@@ -99,35 +103,37 @@ window.loadDocumentIntoForm = (data) => {
 };
 
 async function loadHistory() {
-    const snap = await getDocs(collection(db, "quotes"));
-    const tbody = document.getElementById('history-list');
-    tbody.innerHTML = '';
-    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-                     .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    try {
+        const snap = await getDocs(collection(db, "quotes"));
+        const tbody = document.getElementById('history-list');
+        tbody.innerHTML = '';
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                         .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-    docs.forEach(d => {
-        const tr = document.createElement('tr');
-        tr.className = "active:bg-slate-50 transition-colors";
-        tr.onclick = () => loadDocumentIntoForm(d);
-        tr.innerHTML = `
-            <td class="p-3 text-slate-500 text-xs">${d.date || '---'}</td>
-            <td class="p-3 font-bold text-slate-800">${d.customerName || 'No Name'}</td>
-            <td class="p-3 text-right font-black text-slate-600 italic">£${d.total || '0.00'}</td>
-            <td class="p-3 text-center">
-                <button onclick="deleteQuote('${d.id}', event)" class="delete-btn text-red-500">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-    if (window.lucide) lucide.createIcons();
+        docs.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.className = "active:bg-slate-100 transition-colors";
+            tr.onclick = () => loadDocumentIntoForm(d);
+            tr.innerHTML = `
+                <td class="p-3 text-slate-500 text-xs">${d.date || '---'}</td>
+                <td class="p-3 font-bold text-slate-800">${d.customerName || 'No Name'}</td>
+                <td class="p-3 text-right font-black text-slate-600">£${d.total || '0.00'}</td>
+                <td class="p-3 text-center">
+                    <button onclick="deleteQuote('${d.id}', event)" class="delete-tap-area text-red-600 mx-auto">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        if (window.lucide) lucide.createIcons();
+    } catch (e) { console.error(e); }
 }
 
-// --- Cloud Save ---
+// --- Save & Search ---
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Missing name");
+    if(!name) return alert("Enter Customer Name");
     const items = [];
     document.querySelectorAll('.cost-row').forEach(row => {
         items.push({
@@ -148,12 +154,11 @@ window.saveToCloud = async () => {
             items: items,
             createdAt: serverTimestamp()
         });
-        alert("Saved!");
+        alert("Document Saved Successfully");
         loadHistory();
-    } catch (e) { alert("Error: " + e.message); }
+    } catch (e) { alert("Error saving: " + e.message); }
 };
 
-// --- Customers Logic ---
 async function loadCustomers() {
     const snap = await getDocs(collection(db, "customers"));
     customersList = snap.docs.map(doc => doc.data());
