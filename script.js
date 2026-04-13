@@ -106,38 +106,52 @@ async function loadHistory() {
     lucide.createIcons();
 }
 
-// PDF FIX: FULLY CENTERED AND SCALED TO ONE PAGE
+// PDF FIX: THE CLONING METHOD
 window.downloadPDF = async () => {
-    const el = document.getElementById('document-to-print');
-    const toggle = document.getElementById('toggle-container');
-    const actions = document.querySelectorAll('.action-cell');
-    const th = document.getElementById('th-action');
+    // 1. Clone the element to avoid UI interference
+    const original = document.getElementById('document-to-print');
+    const clone = original.cloneNode(true);
     
-    toggle.style.display = 'none'; th.style.display = 'none';
-    actions.forEach(a => a.style.display = 'none');
+    // 2. Clean the clone (remove buttons/toggles)
+    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+    clone.querySelector('#toggle-container').remove();
+    clone.querySelector('#th-action').remove();
+    clone.querySelectorAll('.action-cell').forEach(el => el.remove());
+
+    // 3. Fix input values (cloning doesn't copy current input text)
+    clone.querySelector('#cust-name').outerHTML = `<span>${document.getElementById('cust-name').value}</span>`;
+    clone.querySelector('#doc-date').outerHTML = `<span>${document.getElementById('doc-date').value}</span>`;
+    clone.querySelector('#cust-address').outerHTML = `<div style="white-space: pre-wrap">${document.getElementById('cust-address').value}</div>`;
+    clone.querySelector('#job-desc').outerHTML = `<div style="white-space: pre-wrap; margin-bottom: 20px;">${document.getElementById('job-desc').value}</div>`;
     
-    el.classList.add('pdf-export-mode');
-    window.scrollTo(0, 0);
+    const originalItems = original.querySelectorAll('.cost-row');
+    clone.querySelectorAll('.cost-row').forEach((row, index) => {
+        const desc = originalItems[index].querySelector('.item-desc').value;
+        const rate = originalItems[index].querySelector('.item-cost').value;
+        const qty = originalItems[index].querySelector('.item-qty').value;
+        const total = originalItems[index].querySelector('.line-total').innerText;
+        
+        row.innerHTML = `
+            <td class="p-3">${desc}</td>
+            <td class="p-3">£${rate}</td>
+            <td class="p-3 text-center">${qty}</td>
+            <td class="p-3 text-right font-bold">${total}</td>
+        `;
+    });
+
+    // 4. Style the clone for PDF
+    clone.style.width = "700px";
+    clone.style.padding = "20px";
+    clone.style.background = "white";
 
     const opt = {
         margin: 10,
         filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Brammeld'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            windowWidth: 800, // Matching the CSS width exactly prevents the rightward shift
-            scrollY: 0,
-            scrollX: 0
-        },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    try {
-        await html2pdf().set(opt).from(el).save();
-    } finally {
-        toggle.style.display = 'flex'; th.style.display = 'table-cell';
-        actions.forEach(a => a.style.display = 'table-cell');
-        el.classList.remove('pdf-export-mode');
-    }
+    // 5. Generate and Save
+    await html2pdf().set(opt).from(clone).save();
 };
