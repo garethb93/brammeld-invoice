@@ -18,7 +18,6 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let currentUser = null;
 
-// Auth Logic
 window.handleLogin = async () => {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -57,7 +56,7 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
         <td class="p-3"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
         <td class="p-3"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
         <td class="p-3 font-black text-right line-total">£0.00</td>
-        <td class="p-3 no-print text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black">×</button></td>
+        <td class="p-3 no-print text-center action-cell"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black">×</button></td>
     `;
     tbody.appendChild(row);
     calculateTotals();
@@ -77,7 +76,7 @@ window.calculateTotals = () => {
 
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Missing Customer Name");
+    if(!name) return alert("Customer Name Required");
     const items = Array.from(document.querySelectorAll('.cost-row')).map(row => ({
         description: row.querySelector('.item-desc').value,
         rate: row.querySelector('.item-cost').value,
@@ -96,9 +95,9 @@ window.saveToCloud = async () => {
             items: items,
             createdAt: serverTimestamp()
         });
-        alert("Synced!");
+        alert("Saved Successfully");
         loadHistory();
-    } catch (e) { alert("Error: " + e.message); }
+    } catch (e) { alert("Save Error: " + e.message); }
 };
 
 async function loadHistory() {
@@ -116,7 +115,7 @@ async function loadHistory() {
             <td class="p-4 font-bold text-slate-800">${data.customerName}</td>
             <td class="p-4 text-right font-black">£${data.total}</td>
             <td class="p-4 text-center">
-                <button onclick="deleteDoc(doc(db, 'quotes', '${d.id}')).then(loadHistory)" class="text-red-500 delete-btn"><i data-lucide="trash-2"></i></button>
+                <button onclick="deleteDoc(doc(db, 'quotes', '${d.id}')).then(loadHistory)" class="text-red-500"><i data-lucide="trash-2"></i></button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -124,21 +123,29 @@ async function loadHistory() {
     lucide.createIcons();
 }
 
-// THE PDF FIX: Forced width and UI stripping
+// FIXED PDF GENERATOR
 window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
-    const custName = document.getElementById('cust-name').value || 'Doc';
+    const toggle = document.getElementById('toggle-container');
+    const actionCells = document.querySelectorAll('.action-cell');
+    const actionHeader = document.getElementById('th-action');
     
-    element.classList.add('pdf-export-mode');
+    // 1. Physically hide the toggle and table buttons before the snapshot
+    toggle.style.visibility = 'hidden';
+    actionHeader.style.display = 'none';
+    actionCells.forEach(c => c.style.display = 'none');
+    
+    // 2. Force layout scale
+    element.classList.add('pdf-layout');
 
     const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `${currentDocType}_${custName}.pdf`,
+        margin: 10,
+        filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`,
         image: { type: 'jpeg', quality: 1 },
         html2canvas: { 
             scale: 3, 
-            useCORS: true, 
-            windowWidth: 1000 // Forces desktop-style layout regardless of phone screen
+            useCORS: true,
+            windowWidth: 800 // This prevents horizontal cutoff
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
@@ -146,6 +153,10 @@ window.downloadPDF = async () => {
     try {
         await html2pdf().set(opt).from(element).save();
     } finally {
-        element.classList.remove('pdf-export-mode');
+        // 3. Restore everything to the screen
+        toggle.style.visibility = 'visible';
+        actionHeader.style.display = 'table-cell';
+        actionCells.forEach(c => c.style.display = 'table-cell');
+        element.classList.remove('pdf-layout');
     }
 };
