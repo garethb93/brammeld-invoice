@@ -73,14 +73,12 @@ window.saveToCloud = async () => {
     } catch (e) { alert("Error: " + e.message); }
 };
 
-// RESTORED DELETE AND HISTORY LOGIC
 async function loadHistory() {
     if(!currentUser) return;
     const q = query(collection(db, "quotes"), where("userId", "==", currentUser.uid));
     const snap = await getDocs(q);
     const tbody = document.getElementById('history-list');
     tbody.innerHTML = '';
-    
     snap.docs.forEach(d => {
         const data = d.data();
         const tr = document.createElement('tr');
@@ -95,10 +93,10 @@ async function loadHistory() {
         };
         tr.innerHTML = `
             <td class="p-4 text-slate-500 text-xs">${data.date}</td>
-            <td class="p-4 font-bold text-slate-800">${data.customerName}</td>
+            <td class="p-4 font-bold">${data.customerName}</td>
             <td class="p-4 text-right font-black">£${data.total}</td>
             <td class="p-4 text-center">
-                <button onclick="event.stopPropagation(); if(confirm('Delete this record?')) deleteDoc(doc(db, 'quotes', '${d.id}')).then(loadHistory)" class="text-red-500 p-2">
+                <button onclick="event.stopPropagation(); if(confirm('Delete record?')) deleteDoc(doc(db, 'quotes', '${d.id}')).then(loadHistory)" class="text-red-500">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
             </td>
@@ -108,14 +106,31 @@ async function loadHistory() {
     lucide.createIcons();
 }
 
+// PDF FIX: FORCES SINGLE PAGE
 window.downloadPDF = async () => {
     const el = document.getElementById('document-to-print'), toggle = document.getElementById('toggle-container');
     const actions = document.querySelectorAll('.action-cell'), th = document.getElementById('th-action');
+    
     toggle.style.display = 'none'; th.style.display = 'none';
     actions.forEach(a => a.style.display = 'none');
     el.classList.add('pdf-export-mode');
-    const opt = { margin: 10, filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`, html2canvas: { scale: 3, windowWidth: 850 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-    try { await html2pdf().set(opt).from(el).save(); } finally {
+
+    const opt = {
+        margin: [10, 5],
+        filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            windowWidth: 800,
+            scrollY: -window.scrollY 
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+        await html2pdf().set(opt).from(el).save();
+    } finally {
         toggle.style.display = 'flex'; th.style.display = 'table-cell';
         actions.forEach(a => a.style.display = 'table-cell');
         el.classList.remove('pdf-export-mode');
