@@ -8,25 +8,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @media print { .no-print { display: none !important; } }
-        .pdf-table-mode .cost-row { display: table-row !important; }
-        .pdf-table-mode .cost-cell { display: table-cell !important; border: 1px solid #e5e7eb; padding: 8px; font-size: 12px; }
-        .pdf-single-page { width: 210mm; padding: 15mm; margin: 0 auto; min-height: 297mm; }
-        .suggestions-list { position: absolute; z-index: 50; width: 100%; background: white; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
-        .delete-tap-area { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-        /* Logo scale for high impact */
+        /* PDF specific styling */
+        .pdf-export-mode { 
+            width: 1000px !important; 
+            padding: 40px !important;
+            background: white !important;
+        }
+        /* Strict removal of UI elements in PDF */
+        .pdf-export-mode .no-print, 
+        .pdf-export-mode #toggle-container,
+        .pdf-export-mode .delete-btn { 
+            display: none !important; 
+        }
         .logo-main { height: 140px; width: auto; object-fit: contain; }
+        .suggestions-list { position: absolute; z-index: 50; width: 100%; background: white; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
 
     <div id="auth-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
-            <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Login</h2>
+            <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Portal</h2>
             <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none focus:ring-2 focus:ring-orange-500">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-orange-500">
             <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold">LOG IN</button>
-            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Invalid Credentials.</p>
+            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Error: Check Login Details.</p>
         </div>
     </div>
 
@@ -35,11 +41,11 @@
             
             <div class="flex justify-between items-center mb-10 border-b-2 border-slate-100 pb-8">
                 <div class="flex items-center">
-                    <img src="logo.png" alt="Brammeld Contracts" class="logo-main">
+                    <img src="logo.png" alt="Logo" class="logo-main">
                 </div>
                 
                 <div class="flex flex-col items-end">
-                    <div class="bg-slate-100 p-1 rounded-lg flex mb-4 no-print">
+                    <div id="toggle-container" class="bg-slate-100 p-1 rounded-lg flex mb-4 no-print">
                         <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm">QUOTE</button>
                         <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-5 py-1.5 rounded-md text-sm font-bold">INVOICE</button>
                     </div>
@@ -56,7 +62,7 @@
                 <input type="date" id="doc-date" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none">
             </div>
 
-            <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none resize-none" placeholder="Description of works..."></textarea>
+            <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none resize-none" placeholder="Job Description..."></textarea>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -81,23 +87,23 @@
         </div>
 
         <div class="no-print mt-6 px-2">
-            <button onclick="addLineItem()" class="text-orange-600 font-black flex items-center gap-2 uppercase text-sm hover:scale-105 transition-transform">
+            <button onclick="addLineItem()" class="text-orange-600 font-black flex items-center gap-2 uppercase text-sm">
                 <i data-lucide="plus-circle" class="w-5 h-5"></i> Add Line Item
             </button>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mt-10 no-print">
-            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 shadow-xl">
-                <i data-lucide="cloud-upload"></i> SAVE TO CLOUD
+            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl">
+                <i data-lucide="cloud-upload"></i> SAVE CLOUD
             </button>
-            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 shadow-xl">
+            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl">
                 <i data-lucide="file-down"></i> DOWNLOAD PDF
             </button>
         </div>
 
         <div class="mt-16 no-print border-t pt-10">
             <h3 class="font-black uppercase italic mb-6 text-slate-700 px-1 flex items-center gap-2 text-lg">
-                <i data-lucide="history" class="w-6 h-6 text-orange-600"></i> Recent Activity
+                <i data-lucide="history" class="w-6 h-6 text-orange-600"></i> Records
             </h3>
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
                 <table class="w-full text-sm">
@@ -114,7 +120,6 @@
             </div>
         </div>
     </div>
-
     <script type="module" src="script.js"></script>
 </body>
 </html>
