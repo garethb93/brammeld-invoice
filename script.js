@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, limit } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
@@ -18,7 +18,7 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let customersList = [];
 
-// --- Auth Handling ---
+// --- Auth ---
 window.handleLogin = async () => {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -37,13 +37,13 @@ onAuthStateChanged(auth, (user) => {
 function initApp() {
     document.getElementById('doc-date').valueAsDate = new Date();
     loadCustomers();
-    loadHistory();
+    loadHistory(); 
     addLineItem();
     setupCustomerSearch();
     if (window.lucide) lucide.createIcons();
 }
 
-// --- Toggle Logic ---
+// --- Form Logic ---
 window.setDocType = (type) => {
     currentDocType = type;
     document.getElementById('doc-title').innerText = type;
@@ -51,7 +51,6 @@ window.setDocType = (type) => {
     document.getElementById('toggle-invoice').className = type === 'INVOICE' ? 'px-6 py-2 rounded-lg text-sm font-bold bg-white shadow-md' : 'px-6 py-2 rounded-lg text-sm font-bold text-slate-500';
 };
 
-// --- Table Logic ---
 window.addLineItem = (desc = '', rate = '0', qty = '1') => {
     const tbody = document.getElementById('line-items');
     const row = document.createElement('tr');
@@ -80,9 +79,9 @@ window.calculateTotals = () => {
     document.getElementById('grand-total').innerText = `£${sub.toFixed(2)}`;
 };
 
-// --- History & Load Logic ---
+// --- DATA LOADING (Fix for old files) ---
 window.loadDocumentIntoForm = (data) => {
-    setDocType(data.type || 'QUOTE');
+    setDocType(data.type?.toUpperCase() || 'QUOTE');
     document.getElementById('cust-name').value = data.customerName || '';
     document.getElementById('cust-address').value = data.customerAddress || '';
     document.getElementById('doc-date').value = data.date || '';
@@ -98,20 +97,21 @@ window.loadDocumentIntoForm = (data) => {
 
 async function loadHistory() {
     try {
-        const snap = await getDocs(collection(db, "quotes"));
+        const snap = await getDocs(collection(db, "quotes")); // Matches your screenshot
         const tbody = document.getElementById('history-list');
         tbody.innerHTML = '';
         
+        // Manual sort to prevent hidden files if createdAt is missing
         const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                          .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
         docs.forEach(d => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-orange-50 cursor-pointer transition-colors group";
+            tr.className = "hover:bg-orange-50 cursor-pointer transition-colors border-b border-slate-50";
             tr.innerHTML = `
                 <td class="p-4 text-slate-500 font-medium">${d.date || '---'}</td>
                 <td class="p-4 font-bold text-slate-800">${d.customerName || 'No Name'}</td>
-                <td class="p-4 text-xs font-black uppercase text-slate-400 group-hover:text-orange-600">${d.type || 'QUOTE'}</td>
+                <td class="p-4 text-xs font-black uppercase text-slate-400">${d.type || 'QUOTE'}</td>
                 <td class="p-4 text-right font-black text-slate-700 italic">£${d.total || '0.00'}</td>
             `;
             tr.onclick = () => loadDocumentIntoForm(d);
@@ -120,7 +120,7 @@ async function loadHistory() {
     } catch (e) { console.error("History fail:", e); }
 }
 
-// --- Customer Logic ---
+// --- Sync & Search ---
 async function loadCustomers() {
     const snap = await getDocs(collection(db, "customers"));
     customersList = snap.docs.map(doc => doc.data());
@@ -149,11 +149,10 @@ function setupCustomerSearch() {
     });
 }
 
-// --- Cloud Save ---
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
     const addr = document.getElementById('cust-address').value;
-    if(!name) return alert("Enter a Customer Name first.");
+    if(!name) return alert("Enter Customer Name.");
 
     const items = [];
     document.querySelectorAll('.cost-row').forEach(row => {
@@ -165,6 +164,7 @@ window.saveToCloud = async () => {
     });
 
     try {
+        // Saving using fields exactly from your screenshots
         await addDoc(collection(db, "quotes"), {
             customerName: name,
             customerAddress: addr,
@@ -179,29 +179,24 @@ window.saveToCloud = async () => {
         if (!customersList.some(c => c.customerName === name)) {
             await addDoc(collection(db, "customers"), { customerName: name, customerAddress: addr });
         }
-        alert("Synced to Cloud History!");
+        alert("Synced to History!");
         loadHistory();
         loadCustomers();
     } catch (e) { alert("Save failed: " + e.message); }
 };
 
-// --- PDF Rule Implementation ---
 window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
-    
-    // Rule B: Hide empty rows
     document.querySelectorAll('.cost-row').forEach(row => {
         if (!row.querySelector('.item-desc').value.trim()) row.classList.add('hidden-row');
     });
-
-    // Rule C: Force Layout
     element.classList.add('pdf-table-mode', 'pdf-single-page');
 
     const opt = {
-        margin: [0, 0],
-        filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Export'}.pdf`,
+        margin: 0,
+        filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`,
         image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+        html2canvas: { scale: 3, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
