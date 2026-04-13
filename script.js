@@ -43,7 +43,7 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
         <td class="p-3"><input type="number" class="w-full bg-transparent item-cost" value="${rate}" oninput="calculateTotals()"></td>
         <td class="p-3"><input type="number" class="w-full bg-transparent text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
         <td class="p-3 font-black text-right line-total">£0.00</td>
-        <td class="p-3 no-print action-cell"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-500">×</button></td>
+        <td class="p-3 no-print action-cell text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-500 font-bold">×</button></td>
     `;
     tbody.appendChild(row);
     calculateTotals();
@@ -73,27 +73,39 @@ window.saveToCloud = async () => {
     } catch (e) { alert("Error: " + e.message); }
 };
 
+// RESTORED DELETE AND HISTORY LOGIC
 async function loadHistory() {
     if(!currentUser) return;
     const q = query(collection(db, "quotes"), where("userId", "==", currentUser.uid));
     const snap = await getDocs(q);
     const tbody = document.getElementById('history-list');
     tbody.innerHTML = '';
+    
     snap.docs.forEach(d => {
         const data = d.data();
         const tr = document.createElement('tr');
-        tr.className = "border-b border-slate-100 cursor-pointer";
+        tr.className = "border-b border-slate-50 hover:bg-slate-50 cursor-pointer";
         tr.onclick = () => {
             document.getElementById('cust-name').value = data.customerName;
             document.getElementById('cust-address').value = data.customerAddress;
             document.getElementById('job-desc').value = data.jobDescription;
             document.getElementById('line-items').innerHTML = '';
             data.items.forEach(i => addLineItem(i.description, i.rate, i.quantity));
-            setDocType(data.type); window.scrollTo(0,0);
+            setDocType(data.type); window.scrollTo({top: 0, behavior: 'smooth'});
         };
-        tr.innerHTML = `<td class="p-3">${data.date}</td><td class="p-3 font-bold">${data.customerName}</td><td class="p-3 text-right font-black">£${data.total}</td>`;
+        tr.innerHTML = `
+            <td class="p-4 text-slate-500 text-xs">${data.date}</td>
+            <td class="p-4 font-bold text-slate-800">${data.customerName}</td>
+            <td class="p-4 text-right font-black">£${data.total}</td>
+            <td class="p-4 text-center">
+                <button onclick="event.stopPropagation(); if(confirm('Delete this record?')) deleteDoc(doc(db, 'quotes', '${d.id}')).then(loadHistory)" class="text-red-500 p-2">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </td>
+        `;
         tbody.appendChild(tr);
     });
+    lucide.createIcons();
 }
 
 window.downloadPDF = async () => {
