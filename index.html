@@ -1,130 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Brammeld Contracts - Invoice Builder</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brammeld Contracts | Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* PDF Specific Styling */
+        @media print {
+            .no-print { display: none !important; }
+        }
+        
+        /* Force Table Layout for PDF */
+        .pdf-table-mode .cost-row {
+            display: table-row !important;
+        }
+        .pdf-table-mode .cost-cell {
+            display: table-cell !important;
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+        }
+        .pdf-table-mode .cost-header {
+            display: table-header-group !important;
+        }
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module" src="script.js"></script>
-
-  <style>
-    @media print {
-      .screen-only { display: none !important; }
-      .print-only { display: block !important; }
-    }
-    .print-only { display: none; }
-  </style>
+        /* Auto-complete dropdown */
+        .suggestions-list {
+            position: absolute;
+            z-index: 50;
+            width: 100%;
+            background: white;
+            border: 1px solid #ddd;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .hidden-row { display: none !important; }
+    </style>
 </head>
+<body class="bg-gray-50 font-sans">
 
-<body class="bg-gray-100 text-gray-800 p-4">
-
-<!-- LOGIN -->
-<div id="loginSection" class="max-w-md mx-auto bg-white shadow-lg p-6 rounded-md">
-  <h2 class="text-2xl font-bold mb-4">Login</h2>
-
-  <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
-  <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-2">
-
-  <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">
-    Login
-  </button>
-</div>
-
-<!-- APP -->
-<div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-md">
-
-  <div class="flex justify-between mb-4">
-    <h2 class="text-xl font-bold screen-only">Quotes</h2>
-    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">
-      Logout
-    </button>
-  </div>
-
-  <!-- SAVED QUOTES -->
-  <div class="mb-6 screen-only">
-    <h3 class="font-semibold mb-2">Saved Quotes</h3>
-    <ul id="savedQuotes" class="border rounded p-2 text-sm"></ul>
-  </div>
-
-  <!-- BUILDER -->
-  <div>
-
-    <!-- HEADER -->
-    <div class="flex justify-between items-center">
-      <img src="logo.png" class="h-24 object-contain">
-
-      <div class="text-right">
-        <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
-        <p>brammeldcontracts@hotmail.com</p>
-        <p>07894013765</p>
-
-        <p id="printDocType" class="print-only font-bold mt-2"></p>
-        <p id="printDate" class="print-only"></p>
-        <p id="paymentTerms" class="print-only font-bold"></p>
-      </div>
+    <div id="auth-overlay" class="fixed inset-0 bg-black bg-opacity-90 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl max-w-sm w-full text-center">
+            <img src="image.png" alt="Logo" class="w-32 mx-auto mb-6">
+            <h2 class="text-xl font-bold mb-4">Staff Login</h2>
+            <input type="email" id="email" placeholder="Email" class="w-full p-2 border rounded mb-3">
+            <input type="password" id="password" placeholder="Password" class="w-full p-2 border rounded mb-4">
+            <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-2 rounded font-bold hover:bg-orange-700">Login</button>
+            <p id="auth-error" class="text-red-500 text-sm mt-2 hidden"></p>
+        </div>
     </div>
 
-    <!-- TYPE -->
-    <div class="mt-4 screen-only">
-      <select id="docType" class="border p-2 rounded">
-        <option value="Quote">Quote</option>
-        <option value="Invoice">Invoice</option>
-      </select>
+    <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-lg min-h-screen my-0 md:my-8 rounded-lg hidden">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b pb-6 gap-4">
+            <img src="image.png" alt="Brammeld Logo" class="w-48">
+            <div class="flex flex-col items-center md:items-end">
+                <div class="bg-gray-100 p-1 rounded-lg flex mb-2 no-print">
+                    <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm">QUOTE</button>
+                    <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-4 py-1 rounded-md text-sm font-bold">INVOICE</button>
+                </div>
+                <h1 id="doc-title" class="text-3xl font-black text-orange-600">QUOTE</h1>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="relative">
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Customer Name</label>
+                <input type="text" id="cust-name" class="w-full p-3 border-2 border-gray-100 rounded-lg focus:border-orange-500 outline-none" autocomplete="off">
+                <div id="suggestions" class="suggestions-list hidden"></div>
+                
+                <label class="block text-xs font-bold uppercase text-gray-500 mt-4 mb-1">Address</label>
+                <textarea id="cust-address" rows="3" class="w-full p-3 border-2 border-gray-100 rounded-lg focus:border-orange-500 outline-none"></textarea>
+            </div>
+            <div class="flex flex-col justify-start md:items-end">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Date</label>
+                    <input type="date" id="doc-date" class="w-full p-3 border-2 border-gray-100 rounded-lg outline-none">
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Project Description</label>
+            <textarea id="job-desc" rows="4" placeholder="Describe the works being carried out..." class="w-full p-4 border-2 border-gray-100 rounded-lg outline-none"></textarea>
+        </div>
+
+        <div id="pdf-area">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left mb-4" id="items-table">
+                    <thead class="bg-gray-800 text-white cost-header">
+                        <tr>
+                            <th class="p-3 text-sm">Description</th>
+                            <th class="p-3 text-sm w-24">Cost (£)</th>
+                            <th class="p-3 text-sm w-20">Qty</th>
+                            <th class="p-3 text-sm w-24">Total</th>
+                            <th class="p-3 w-10 no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="line-items">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button onclick="addLineItem()" class="no-print flex items-center gap-2 text-orange-600 font-bold mb-8 hover:text-orange-700">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i> Add Line Item
+        </button>
+
+        <div class="flex flex-col items-end border-t pt-6 gap-2">
+            <div class="flex justify-between w-full max-w-[250px]">
+                <span class="text-gray-500 font-bold">Subtotal:</span>
+                <span id="subtotal" class="font-bold text-lg">£0.00</span>
+            </div>
+            <div class="flex justify-between w-full max-w-[250px] border-t-2 border-orange-600 pt-2">
+                <span class="text-orange-600 font-black text-xl">TOTAL:</span>
+                <span id="grand-total" class="font-black text-xl">£0.00</span>
+            </div>
+        </div>
+
+        <div class="mt-12 flex flex-col md:flex-row gap-4 no-print">
+            <button onclick="generatePDF()" class="flex-1 bg-gray-800 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition">
+                <i data-lucide="file-down"></i> Save & Download PDF
+            </button>
+            <button onclick="saveToFirestore()" class="flex-1 bg-orange-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-700 transition">
+                <i data-lucide="cloud-upload"></i> Sync to Cloud
+            </button>
+        </div>
     </div>
 
-    <!-- DATE -->
-    <input type="date" id="invoiceDate" class="w-full border p-2 mt-2 rounded screen-only">
-
-    <!-- CUSTOMER -->
-    <input id="customerName" placeholder="Customer Name" class="w-full border p-2 mt-2 rounded screen-only">
-    <textarea id="customerAddress" placeholder="Customer Address" class="w-full border p-2 mt-2 rounded screen-only"></textarea>
-
-    <p id="printCustomerName" class="print-only"></p>
-    <p id="printCustomerAddress" class="print-only whitespace-pre-line"></p>
-
-    <!-- JOB -->
-    <textarea id="jobDescription" placeholder="Job Description" class="w-full border p-2 mt-2 rounded screen-only"></textarea>
-    <p id="printJobDescription" class="print-only whitespace-pre-line"></p>
-
-    <!-- ITEMS -->
-    <div id="lineItems" class="mt-4"></div>
-
-    <button onclick="addItem()" class="bg-blue-600 text-white px-4 py-2 mt-2 rounded screen-only">
-      Add Cost
-    </button>
-
-    <div id="printLineItems" class="print-only mt-2 whitespace-pre-line"></div>
-
-    <!-- TOTAL -->
-    <h2 class="mt-4 font-bold">Total: £<span id="totalAmount">0.00</span></h2>
-
-    <!-- NOTES -->
-    <textarea id="notes" class="w-full border p-2 mt-2 rounded screen-only">Thank you for your business.</textarea>
-    <p id="printNotes" class="print-only whitespace-pre-line"></p>
-
-    <!-- ✅ PAYMENT DETAILS BACK -->
-    <div id="paymentDetails" class="print-only mt-4">
-      <p><strong>Payment Details:</strong></p>
-      <p>BRAMMELD CONTRACTS</p>
-      <p>Monzo</p>
-      <p>Sort Code: 04-00-03</p>
-      <p>Account Number: 14081712</p>
-    </div>
-
-    <!-- BUTTONS -->
-    <div class="mt-4 screen-only">
-      <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2 rounded">
-        Download PDF
-      </button>
-
-      <button onclick="saveQuote()" class="bg-blue-600 text-white px-4 py-2 rounded">
-        Save Quote
-      </button>
-    </div>
-
-  </div>
-</div>
-
+    <script type="module" src="script.js"></script>
+    <script>
+        // Lucide icon helper
+        window.addEventListener('load', () => lucide.createIcons());
+    </script>
 </body>
 </html>
