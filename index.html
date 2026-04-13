@@ -8,24 +8,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* PDF Layout: Centering and Page Fit */
-        .pdf-export-mode { 
-            width: 800px !important; 
-            padding: 40px !important;
-            background: white !important;
-            margin: 0 auto !important; /* Forces centering in the PDF capture */
-            min-height: auto !important;
-            overflow: visible !important;
-        }
-        
-        /* Strict UI removal for PDF */
-        .pdf-export-mode .no-print, 
-        .pdf-export-mode #toggle-container, 
-        .pdf-export-mode .action-cell { 
-            display: none !important; 
-        }
+        /* Hidden container for PDF generation */
+        #pdf-template { display: none; }
         
         .logo-main { height: 160px; width: auto; object-fit: contain; }
+        
+        /* Ensure inputs look like text in PDF */
+        .pdf-view input, .pdf-view textarea { 
+            border: none !important; 
+            background: transparent !important; 
+            padding: 0 !important;
+            appearance: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
@@ -41,7 +35,7 @@
     </div>
 
     <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen hidden">
-        <div id="document-to-print" class="bg-white">
+        <div id="document-to-print" class="bg-white p-4">
             <div class="flex justify-between items-center mb-10 border-b-2 border-slate-100 pb-8">
                 <img src="logo.png" alt="Logo" class="logo-main">
                 <div class="flex flex-col items-end">
