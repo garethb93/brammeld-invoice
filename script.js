@@ -106,23 +106,22 @@ async function loadHistory() {
     lucide.createIcons();
 }
 
-// PDF FIX: THE CLONING METHOD
+// THE FINAL PDF CENTERING FIX
 window.downloadPDF = async () => {
-    // 1. Clone the element to avoid UI interference
     const original = document.getElementById('document-to-print');
     const clone = original.cloneNode(true);
     
-    // 2. Clean the clone (remove buttons/toggles)
+    // 1. Clean UI elements
     clone.querySelectorAll('.no-print').forEach(el => el.remove());
-    clone.querySelector('#toggle-container').remove();
-    clone.querySelector('#th-action').remove();
+    const toggle = clone.querySelector('#toggle-container'); if(toggle) toggle.remove();
+    const th = clone.querySelector('#th-action'); if(th) th.remove();
     clone.querySelectorAll('.action-cell').forEach(el => el.remove());
 
-    // 3. Fix input values (cloning doesn't copy current input text)
-    clone.querySelector('#cust-name').outerHTML = `<span>${document.getElementById('cust-name').value}</span>`;
-    clone.querySelector('#doc-date').outerHTML = `<span>${document.getElementById('doc-date').value}</span>`;
-    clone.querySelector('#cust-address').outerHTML = `<div style="white-space: pre-wrap">${document.getElementById('cust-address').value}</div>`;
-    clone.querySelector('#job-desc').outerHTML = `<div style="white-space: pre-wrap; margin-bottom: 20px;">${document.getElementById('job-desc').value}</div>`;
+    // 2. Map Input values to static text
+    clone.querySelector('#cust-name').outerHTML = `<div style="font-weight:bold; font-size:1.4rem;">${document.getElementById('cust-name').value}</div>`;
+    clone.querySelector('#doc-date').outerHTML = `<div>${document.getElementById('doc-date').value}</div>`;
+    clone.querySelector('#cust-address').outerHTML = `<div style="white-space: pre-wrap; margin-top:10px; color:#475569;">${document.getElementById('cust-address').value}</div>`;
+    clone.querySelector('#job-desc').outerHTML = `<div style="white-space: pre-wrap; margin: 30px 0; min-height:120px; color:#1e293b;">${document.getElementById('job-desc').value}</div>`;
     
     const originalItems = original.querySelectorAll('.cost-row');
     clone.querySelectorAll('.cost-row').forEach((row, index) => {
@@ -130,28 +129,36 @@ window.downloadPDF = async () => {
         const rate = originalItems[index].querySelector('.item-cost').value;
         const qty = originalItems[index].querySelector('.item-qty').value;
         const total = originalItems[index].querySelector('.line-total').innerText;
-        
         row.innerHTML = `
-            <td class="p-3">${desc}</td>
-            <td class="p-3">£${rate}</td>
-            <td class="p-3 text-center">${qty}</td>
-            <td class="p-3 text-right font-bold">${total}</td>
+            <td class="p-3" style="border-bottom:1px solid #f1f5f9;">${desc}</td>
+            <td class="p-3" style="border-bottom:1px solid #f1f5f9;">£${rate}</td>
+            <td class="p-3 text-center" style="border-bottom:1px solid #f1f5f9;">${qty}</td>
+            <td class="p-3 text-right font-bold" style="border-bottom:1px solid #f1f5f9;">${total}</td>
         `;
     });
 
-    // 4. Style the clone for PDF
-    clone.style.width = "700px";
-    clone.style.padding = "20px";
-    clone.style.background = "white";
+    // 3. THE CENTERING WRAPPER
+    const pdfWrapper = document.createElement('div');
+    pdfWrapper.style.width = "210mm"; // Standard A4 Width
+    pdfWrapper.style.minHeight = "297mm"; // Standard A4 Height
+    pdfWrapper.style.backgroundColor = "white";
+    pdfWrapper.style.display = "flex";
+    pdfWrapper.style.flexDirection = "column";
+    pdfWrapper.style.alignItems = "center";
+    pdfWrapper.style.paddingTop = "10mm";
+
+    clone.style.width = "190mm"; // Internal printable area
+    clone.style.margin = "0 auto";
+    
+    pdfWrapper.appendChild(clone);
 
     const opt = {
-        margin: 10,
+        margin: 0,
         filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Brammeld'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, width: 793 }, // 793px = 210mm at 96dpi
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // 5. Generate and Save
-    await html2pdf().set(opt).from(clone).save();
+    await html2pdf().set(opt).from(pdfWrapper).save();
 };
