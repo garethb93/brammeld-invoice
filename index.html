@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Brammeld Contracts - Invoice Builder</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +26,9 @@
   <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
   <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-2">
 
-  <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">Login</button>
+  <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">
+    Login
+  </button>
 </div>
 
 <!-- APP -->
@@ -34,7 +36,9 @@
 
   <div class="flex justify-between mb-4">
     <h2 class="text-xl font-bold screen-only">Quotes</h2>
-    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">Logout</button>
+    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">
+      Logout
+    </button>
   </div>
 
   <!-- SAVED -->
@@ -46,9 +50,8 @@
   <!-- BUILDER -->
   <div>
 
-    <!-- HEADER -->
     <div class="flex justify-between">
-      <img src="logo.png" class="h-32">
+      <img src="logo.png" class="h-24">
 
       <div class="text-right">
         <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
@@ -57,43 +60,29 @@
 
         <p id="printDocType" class="print-only font-bold mt-2"></p>
         <p id="printDate" class="print-only"></p>
-
-        <!-- 30 DAY -->
-        <p id="paymentTerms" class="print-only font-bold mt-1"></p>
-
-        <!-- BANK DETAILS -->
-        <div id="paymentDetails" class="print-only mt-2">
-          <p>BRAMMELD CONTRACTS</p>
-          <p>Monzo</p>
-          <p>Sort Code: 04-00-03</p>
-          <p>Account Number: 14081712</p>
-        </div>
+        <p id="paymentTerms" class="print-only font-bold"></p>
       </div>
     </div>
 
     <!-- TYPE -->
     <div class="mt-4 screen-only">
-      <label>Type</label>
-      <select id="docType" class="border p-2 w-full">
-        <option>Quote</option>
-        <option>Invoice</option>
+      <select id="docType" class="border p-2">
+        <option value="Quote">Quote</option>
+        <option value="Invoice">Invoice</option>
       </select>
     </div>
 
     <!-- DATE -->
-    <div class="mt-2 screen-only">
+    <div class="mt-4 screen-only">
       <input type="date" id="invoiceDate" class="border p-2 w-full">
     </div>
 
     <!-- CUSTOMER -->
-    <input id="customerName" placeholder="Customer Name" class="border p-2 w-full mt-2 screen-only">
-    <p id="printCustomerName" class="print-only"></p>
+    <input id="customerName" class="border p-2 w-full mt-4" placeholder="Customer Name">
+    <textarea id="customerAddress" class="border p-2 w-full mt-2" placeholder="Address"></textarea>
 
-    <textarea id="customerAddress" class="border p-2 w-full mt-2 screen-only"></textarea>
-    <p id="printCustomerAddress" class="print-only"></p>
-
-    <textarea id="jobDescription" class="border p-2 w-full mt-2 screen-only"></textarea>
-    <p id="printJobDescription" class="print-only"></p>
+    <!-- JOB -->
+    <textarea id="jobDescription" class="border p-2 w-full mt-2" placeholder="Job"></textarea>
 
     <!-- ITEMS -->
     <div id="lineItems" class="mt-4"></div>
@@ -102,18 +91,32 @@
       Add Cost
     </button>
 
+    <!-- TOTAL -->
     <div class="mt-4 font-bold">
-      Total £<span id="totalAmount">0.00</span>
+      Total: £<span id="totalAmount">0.00</span>
     </div>
 
     <!-- NOTES -->
-    <textarea id="notes" class="border p-2 w-full mt-2 screen-only">Thank you for your business.</textarea>
-    <p id="printNotes" class="print-only"></p>
+    <textarea id="notes" class="border p-2 w-full mt-2">Thank you for your business.</textarea>
+
+    <!-- ✅ PAYMENT DETAILS BACK -->
+    <div id="paymentDetails" class="mt-4 print-only">
+      <h3 class="font-bold">Payment Details</h3>
+      <p>BRAMMELD CONTRACTS</p>
+      <p>Monzo</p>
+      <p>Sort Code: 04-00-03</p>
+      <p>Account Number: 14081712</p>
+    </div>
 
     <!-- BUTTONS -->
     <div class="mt-4 screen-only">
-      <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2">Download PDF</button>
-      <button onclick="saveQuote()" class="bg-blue-600 text-white px-4 py-2">Save Quote</button>
+      <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2">
+        Download PDF
+      </button>
+
+      <button onclick="saveQuote()" class="bg-blue-600 text-white px-4 py-2">
+        Save Quote
+      </button>
     </div>
 
   </div>
