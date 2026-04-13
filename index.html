@@ -3,119 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Brammeld Contracts | Builder</title>
+    <title>Brammeld Contracts</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .pdf-export-mode { 
-            width: 850px !important; 
-            padding: 50px !important;
-            background: white !important;
-            margin: 0 !important;
-        }
-        .pdf-export-mode .no-print, 
-        .pdf-export-mode #toggle-container,
-        .pdf-export-mode .action-cell,
-        .pdf-export-mode .delete-btn { 
-            display: none !important; 
-        }
+        .pdf-export-mode { width: 850px !important; padding: 50px !important; background: white !important; margin: 0 !important; }
+        .pdf-export-mode .no-print, .pdf-export-mode #toggle-container, .pdf-export-mode .action-cell { display: none !important; }
         .logo-main { height: 160px; width: auto; object-fit: contain; }
-        .suggestions-list { position: absolute; z-index: 50; width: 100%; background: white; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
-
     <div id="auth-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
-            <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Login</h2>
-            <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none focus:ring-2 focus:ring-orange-500">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-orange-500">
+            <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Portal</h2>
+            <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none">
             <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold">LOG IN</button>
-            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Error: Check Login Details.</p>
+            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Error: Invalid Login.</p>
         </div>
     </div>
 
     <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen hidden">
         <div id="document-to-print" class="bg-white">
             <div class="flex justify-between items-center mb-10 border-b-2 border-slate-100 pb-8">
-                <div class="flex items-center">
-                    <img src="logo.png" alt="Logo" class="logo-main">
-                </div>
+                <img src="logo.png" alt="Logo" class="logo-main">
                 <div class="flex flex-col items-end">
                     <div id="toggle-container" class="bg-slate-100 p-1 rounded-lg flex mb-4 no-print">
                         <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm">QUOTE</button>
                         <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-5 py-1.5 rounded-md text-sm font-bold">INVOICE</button>
                     </div>
-                    <h1 id="doc-title" class="text-5xl font-black text-orange-600 uppercase italic leading-none tracking-tighter">QUOTE</h1>
+                    <h1 id="doc-title" class="text-5xl font-black text-orange-600 uppercase italic tracking-tighter">QUOTE</h1>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div class="relative">
-                    <input type="text" id="cust-name" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-orange-500" placeholder="Customer Name">
-                    <div id="suggestions" class="suggestions-list hidden rounded-xl shadow-lg"></div>
-                    <textarea id="cust-address" rows="2" class="w-full p-3 bg-slate-50 rounded-xl mt-2 outline-none resize-none" placeholder="Address"></textarea>
-                </div>
-                <input type="date" id="doc-date" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none">
+                <input type="text" id="cust-name" class="p-3 bg-slate-50 rounded-xl font-bold outline-none" placeholder="Customer Name">
+                <input type="date" id="doc-date" class="p-3 bg-slate-50 rounded-xl font-bold outline-none">
+                <textarea id="cust-address" rows="2" class="col-span-full p-3 bg-slate-50 rounded-xl outline-none" placeholder="Address"></textarea>
             </div>
-
-            <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none resize-none" placeholder="Job Description..."></textarea>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-800 text-white text-[10px] uppercase tracking-widest">
-                        <tr>
-                            <th class="p-4">Description</th>
-                            <th class="p-4 w-24">Rate</th>
-                            <th class="p-4 w-16 text-center">Qty</th>
-                            <th class="p-4 w-24 text-right">Total</th>
-                            <th id="th-action" class="p-4 w-10 no-print"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="line-items"></tbody>
-                </table>
-            </div>
-
-            <div class="flex flex-col items-end mt-10 border-t-2 border-slate-100 pt-6">
-                <div class="text-orange-600 font-black text-4xl px-2 italic uppercase">
-                    TOTAL: <span id="grand-total">£0.00</span>
-                </div>
+            <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none" placeholder="Job Description..."></textarea>
+            <table class="w-full text-left">
+                <thead class="bg-slate-800 text-white text-[10px] uppercase">
+                    <tr><th class="p-4">Description</th><th class="p-4 w-24">Rate</th><th class="p-4 w-16 text-center">Qty</th><th class="p-4 w-24 text-right">Total</th><th id="th-action" class="no-print"></th></tr>
+                </thead>
+                <tbody id="line-items"></tbody>
+            </table>
+            <div class="flex flex-col items-end mt-10 border-t-2 pt-6">
+                <div class="text-orange-600 font-black text-4xl italic">TOTAL: <span id="grand-total">£0.00</span></div>
             </div>
         </div>
-
-        <div class="no-print mt-6 px-2">
-            <button onclick="addLineItem()" class="text-orange-600 font-black flex items-center gap-2 uppercase text-sm">
-                <i data-lucide="plus-circle" class="w-5 h-5"></i> Add Line Item
-            </button>
-        </div>
-
+        <div class="no-print mt-6"><button onclick="addLineItem()" class="text-orange-600 font-black uppercase text-sm">+ Add Line Item</button></div>
         <div class="grid grid-cols-2 gap-4 mt-10 no-print">
-            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2">
-                <i data-lucide="cloud-upload"></i> SAVE CLOUD
-            </button>
-            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2">
-                <i data-lucide="file-down"></i> DOWNLOAD PDF
-            </button>
+            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-5 rounded-xl font-bold">SAVE CLOUD</button>
+            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold">DOWNLOAD PDF</button>
         </div>
-
         <div class="mt-16 no-print border-t pt-10">
-            <h3 class="font-black uppercase italic mb-6 text-slate-700 px-1 flex items-center gap-2 text-lg">
-                <i data-lucide="history" class="w-6 h-6 text-orange-600"></i> Records
-            </h3>
-            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase">
-                        <tr>
-                            <th class="p-4 text-left">Date</th>
-                            <th class="p-4 text-left">Customer</th>
-                            <th class="p-4 text-right">Total</th>
-                            <th class="p-4 text-center">Manage</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
+            <h3 class="font-black uppercase italic mb-6">Recent Records</h3>
+            <table class="w-full text-sm"><tbody id="history-list"></tbody></table>
         </div>
     </div>
     <script type="module" src="script.js"></script>
