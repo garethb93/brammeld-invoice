@@ -14,31 +14,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-let currentDocType = 'QUOTE';
-let currentUser = null;
+let currentDocType = 'QUOTE', currentUser = null;
 
 window.handleLogin = async () => {
-    const e = document.getElementById('email').value;
-    const p = document.getElementById('password').value;
-    try { await signInWithEmailAndPassword(auth, e, p); } 
-    catch (err) { document.getElementById('auth-error').classList.remove('hidden'); }
+    const e = document.getElementById('email').value, p = document.getElementById('password').value;
+    try { await signInWithEmailAndPassword(auth, e, p); } catch (err) { document.getElementById('auth-error').classList.remove('hidden'); }
 };
 
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        document.getElementById('auth-overlay').classList.add('hidden');
-        document.getElementById('app-content').classList.remove('hidden');
-        initApp();
-    }
+    if (user) { currentUser = user; document.getElementById('auth-overlay').classList.add('hidden'); document.getElementById('app-content').classList.remove('hidden'); initApp(); }
 });
 
-function initApp() {
-    document.getElementById('doc-date').valueAsDate = new Date();
-    loadHistory();
-    addLineItem();
-}
+function initApp() { document.getElementById('doc-date').valueAsDate = new Date(); loadHistory(); addLineItem(); }
 
 window.setDocType = (type) => {
     currentDocType = type;
@@ -53,10 +40,10 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
     row.className = "cost-row border-b border-slate-50";
     row.innerHTML = `
         <td class="p-3"><textarea class="w-full bg-transparent outline-none item-desc resize-none" rows="1">${desc}</textarea></td>
-        <td class="p-3"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
-        <td class="p-3"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
+        <td class="p-3"><input type="number" class="w-full bg-transparent item-cost" value="${rate}" oninput="calculateTotals()"></td>
+        <td class="p-3"><input type="number" class="w-full bg-transparent text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
         <td class="p-3 font-black text-right line-total">£0.00</td>
-        <td class="p-3 no-print text-center action-cell"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black">×</button></td>
+        <td class="p-3 no-print action-cell"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-500">×</button></td>
     `;
     tbody.appendChild(row);
     calculateTotals();
@@ -65,8 +52,7 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
 window.calculateTotals = () => {
     let sub = 0;
     document.querySelectorAll('.cost-row').forEach(row => {
-        const r = parseFloat(row.querySelector('.item-cost').value) || 0;
-        const q = parseFloat(row.querySelector('.item-qty').value) || 0;
+        const r = parseFloat(row.querySelector('.item-cost').value) || 0, q = parseFloat(row.querySelector('.item-qty').value) || 0;
         row.querySelector('.line-total').innerText = `£${(r * q).toFixed(2)}`;
         sub += (r * q);
     });
@@ -75,27 +61,15 @@ window.calculateTotals = () => {
 
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Missing Customer Name");
+    if(!name) return alert("Customer Name Required");
     const items = Array.from(document.querySelectorAll('.cost-row')).map(row => ({
         description: row.querySelector('.item-desc').value,
         rate: row.querySelector('.item-cost').value,
         quantity: row.querySelector('.item-qty').value
     }));
-
     try {
-        await addDoc(collection(db, "quotes"), {
-            userId: currentUser.uid,
-            customerName: name,
-            customerAddress: document.getElementById('cust-address').value,
-            date: document.getElementById('doc-date').value,
-            jobDescription: document.getElementById('job-desc').value,
-            type: currentDocType,
-            total: document.getElementById('grand-total').innerText.replace('£', ''),
-            items: items,
-            createdAt: serverTimestamp()
-        });
-        alert("Synced!");
-        loadHistory();
+        await addDoc(collection(db, "quotes"), { userId: currentUser.uid, customerName: name, customerAddress: document.getElementById('cust-address').value, date: document.getElementById('doc-date').value, jobDescription: document.getElementById('job-desc').value, type: currentDocType, total: document.getElementById('grand-total').innerText.replace('£', ''), items: items, createdAt: serverTimestamp() });
+        alert("Saved!"); loadHistory();
     } catch (e) { alert("Error: " + e.message); }
 };
 
@@ -105,52 +79,33 @@ async function loadHistory() {
     const snap = await getDocs(q);
     const tbody = document.getElementById('history-list');
     tbody.innerHTML = '';
-    
-    // Sort manually in JS to avoid Index requirements
-    const docs = snap.docs.map(d => ({id: d.id, ...d.data()}))
-                         .sort((a,b) => (b.date > a.date ? 1 : -1));
-
-    docs.forEach(data => {
+    snap.docs.forEach(d => {
+        const data = d.data();
         const tr = document.createElement('tr');
-        tr.className = "border-b border-slate-50";
-        tr.innerHTML = `
-            <td class="p-4 text-slate-500 text-xs">${data.date}</td>
-            <td class="p-4 font-bold text-slate-800">${data.customerName}</td>
-            <td class="p-4 text-right font-black">£${data.total}</td>
-            <td class="p-4 text-center">
-                <button onclick="deleteDoc(doc(db, 'quotes', '${data.id}')).then(loadHistory)" class="text-red-500 delete-btn"><i data-lucide="trash-2"></i></button>
-            </td>
-        `;
+        tr.className = "border-b border-slate-100 cursor-pointer";
+        tr.onclick = () => {
+            document.getElementById('cust-name').value = data.customerName;
+            document.getElementById('cust-address').value = data.customerAddress;
+            document.getElementById('job-desc').value = data.jobDescription;
+            document.getElementById('line-items').innerHTML = '';
+            data.items.forEach(i => addLineItem(i.description, i.rate, i.quantity));
+            setDocType(data.type); window.scrollTo(0,0);
+        };
+        tr.innerHTML = `<td class="p-3">${data.date}</td><td class="p-3 font-bold">${data.customerName}</td><td class="p-3 text-right font-black">£${data.total}</td>`;
         tbody.appendChild(tr);
     });
-    lucide.createIcons();
 }
 
 window.downloadPDF = async () => {
-    const element = document.getElementById('document-to-print');
-    const toggle = document.getElementById('toggle-container');
-    const actionCells = document.querySelectorAll('.action-cell');
-    const actionHeader = document.getElementById('th-action');
-    
-    toggle.style.display = 'none';
-    actionHeader.style.display = 'none';
-    actionCells.forEach(c => c.style.display = 'none');
-    element.classList.add('pdf-export-mode');
-
-    const opt = {
-        margin: [10, 10],
-        filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Doc'}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 3, useCORS: true, windowWidth: 850 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-        await html2pdf().set(opt).from(element).save();
-    } finally {
-        toggle.style.display = 'flex';
-        actionHeader.style.display = 'table-cell';
-        actionCells.forEach(c => c.style.display = 'table-cell');
-        element.classList.remove('pdf-export-mode');
+    const el = document.getElementById('document-to-print'), toggle = document.getElementById('toggle-container');
+    const actions = document.querySelectorAll('.action-cell'), th = document.getElementById('th-action');
+    toggle.style.display = 'none'; th.style.display = 'none';
+    actions.forEach(a => a.style.display = 'none');
+    el.classList.add('pdf-export-mode');
+    const opt = { margin: 10, filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`, html2canvas: { scale: 3, windowWidth: 850 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    try { await html2pdf().set(opt).from(el).save(); } finally {
+        toggle.style.display = 'flex'; th.style.display = 'table-cell';
+        actions.forEach(a => a.style.display = 'table-cell');
+        el.classList.remove('pdf-export-mode');
     }
 };
