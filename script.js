@@ -18,7 +18,7 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let customersList = [];
 
-// --- Auth Handling ---
+// --- Auth ---
 window.handleLogin = async () => {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -42,7 +42,7 @@ function initApp() {
     setupCustomerSearch();
 }
 
-// --- App Logic ---
+// --- App Functions ---
 window.setDocType = (type) => {
     currentDocType = type;
     document.getElementById('doc-title').innerText = type;
@@ -55,10 +55,10 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
     const row = document.createElement('tr');
     row.className = "cost-row border-b border-slate-50";
     row.innerHTML = `
-        <td class="p-2"><textarea class="w-full bg-transparent outline-none item-desc" rows="1">${desc}</textarea></td>
-        <td class="p-2"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
-        <td class="p-2"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
-        <td class="p-2 font-bold text-right line-total text-slate-700">£0.00</td>
+        <td class="p-2 cost-cell"><textarea class="w-full bg-transparent outline-none item-desc resize-none" rows="1">${desc}</textarea></td>
+        <td class="p-2 cost-cell"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
+        <td class="p-2 cost-cell"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
+        <td class="p-2 cost-cell font-black text-right line-total text-slate-700">£0.00</td>
         <td class="p-2 no-print text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black px-2">×</button></td>
     `;
     tbody.appendChild(row);
@@ -66,25 +66,25 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
 };
 
 window.calculateTotals = () => {
-    let total = 0;
+    let sub = 0;
     document.querySelectorAll('.cost-row').forEach(row => {
         const r = parseFloat(row.querySelector('.item-cost').value) || 0;
         const q = parseFloat(row.querySelector('.item-qty').value) || 0;
         const line = r * q;
         row.querySelector('.line-total').innerText = `£${line.toFixed(2)}`;
-        total += line;
+        sub += line;
     });
-    document.getElementById('grand-total').innerText = `£${total.toFixed(2)}`;
+    document.getElementById('grand-total').innerText = `£${sub.toFixed(2)}`;
 };
 
-// --- History & Delete ---
+// --- History / Deleting ---
 window.deleteQuote = async (id, event) => {
     event.stopPropagation(); 
-    if (window.confirm("DELETE RECORD?\nThis will be removed permanently from the system.")) {
+    if (window.confirm("ARE YOU SURE?\nThis record will be permanently deleted.")) {
         try {
             await deleteDoc(doc(db, "quotes", id));
             loadHistory();
-        } catch (e) { alert("Delete failed: " + e.message); }
+        } catch (e) { alert("Error: " + e.message); }
     }
 };
 
@@ -109,10 +109,10 @@ async function loadHistory() {
 
         docs.forEach(d => {
             const tr = document.createElement('tr');
-            tr.className = "active:bg-slate-100 transition-colors";
+            tr.className = "active:bg-slate-50 transition-colors border-b border-slate-50";
             tr.onclick = () => loadDocumentIntoForm(d);
             tr.innerHTML = `
-                <td class="p-3 text-slate-500 text-[11px]">${d.date || '---'}</td>
+                <td class="p-3 text-slate-500 text-xs">${d.date || '---'}</td>
                 <td class="p-3 font-bold text-slate-800">${d.customerName || 'No Name'}</td>
                 <td class="p-3 text-right font-black text-slate-600">£${d.total || '0.00'}</td>
                 <td class="p-3 text-center">
@@ -127,10 +127,10 @@ async function loadHistory() {
     } catch (e) { console.error(e); }
 }
 
-// --- Cloud Sync ---
+// --- Save & Search ---
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Enter Customer Name");
+    if(!name) return alert("Enter Name");
     const items = [];
     document.querySelectorAll('.cost-row').forEach(row => {
         items.push({
@@ -151,17 +151,16 @@ window.saveToCloud = async () => {
             items: items,
             createdAt: serverTimestamp()
         });
-        alert("Document Synced!");
+        alert("Saved to Cloud");
         loadHistory();
     } catch (e) { alert("Error: " + e.message); }
 };
 
-// --- Customer Memory ---
 async function loadCustomers() {
     try {
         const snap = await getDocs(collection(db, "customers"));
         customersList = snap.docs.map(doc => doc.data());
-    } catch (e) { console.log("Customer fetch skipped"); }
+    } catch (e) {}
 }
 
 function setupCustomerSearch() {
@@ -187,23 +186,21 @@ function setupCustomerSearch() {
     });
 }
 
-// --- PDF Export ---
+// --- PDF Logic ---
 window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
     element.classList.add('pdf-table-mode', 'pdf-single-page');
     
     const opt = {
         margin: 0,
-        filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`,
+        filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Doc'}.pdf`,
         image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: { scale: 3, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     try {
         await html2pdf().set(opt).from(element).save();
-    } catch (e) {
-        alert("PDF Error: Try again on a stable connection.");
     } finally {
         element.classList.remove('pdf-table-mode', 'pdf-single-page');
     }
