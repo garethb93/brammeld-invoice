@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
@@ -18,15 +18,12 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let customersList = [];
 
-// Auth Logic
+// Auth
 window.handleLogin = async () => {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    try {
-        await signInWithEmailAndPassword(auth, email, pass);
-    } catch (err) {
-        document.getElementById('auth-error').classList.remove('hidden');
-    }
+    const e = document.getElementById('email').value;
+    const p = document.getElementById('password').value;
+    try { await signInWithEmailAndPassword(auth, e, p); } 
+    catch (err) { document.getElementById('auth-error').classList.remove('hidden'); }
 };
 
 onAuthStateChanged(auth, (user) => {
@@ -68,16 +65,16 @@ window.addLineItem = () => {
 };
 
 window.calculateTotals = () => {
-    let subtotal = 0;
+    let total = 0;
     document.querySelectorAll('.cost-row').forEach(row => {
-        const cost = parseFloat(row.querySelector('.item-cost').value) || 0;
-        const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-        const total = cost * qty;
-        row.querySelector('.line-total').innerText = `£${total.toFixed(2)}`;
-        subtotal += total;
+        const c = parseFloat(row.querySelector('.item-cost').value) || 0;
+        const q = parseFloat(row.querySelector('.item-qty').value) || 0;
+        const line = c * q;
+        row.querySelector('.line-total').innerText = `£${line.toFixed(2)}`;
+        total += line;
     });
-    document.getElementById('subtotal').innerText = `£${subtotal.toFixed(2)}`;
-    document.getElementById('grand-total').innerText = `£${subtotal.toFixed(2)}`;
+    document.getElementById('subtotal').innerText = `£${total.toFixed(2)}`;
+    document.getElementById('grand-total').innerText = `£${total.toFixed(2)}`;
 };
 
 async function loadCustomers() {
@@ -86,15 +83,17 @@ async function loadCustomers() {
 }
 
 async function loadHistory() {
-    const q = query(collection(db, "documents"), orderBy("createdAt", "desc"), limit(10));
-    const snap = await getDocs(q);
+    // Simple fetch without ordering first to avoid index errors
+    const snap = await getDocs(collection(db, "documents"));
     const tbody = document.getElementById('history-list');
     tbody.innerHTML = '';
-    snap.forEach(doc => {
-        const d = doc.data();
+    
+    // Sort locally to ensure it works immediately
+    const docs = snap.docs.map(d => d.data()).sort((a,b) => b.createdAt?.seconds - a.createdAt?.seconds);
+    
+    docs.slice(0, 10).forEach(d => {
         const tr = document.createElement('tr');
-        tr.className = "border-b";
-        tr.innerHTML = `<td class="p-3">${d.date}</td><td class="p-3 font-bold">${d.customerName}</td><td class="p-3">${d.type}</td><td class="p-3 font-bold text-orange-600">${d.total}</td>`;
+        tr.innerHTML = `<td class="p-4">${d.date}</td><td class="p-4 font-bold">${d.customerName}</td><td class="p-4">${d.type}</td><td class="p-4 text-right font-bold text-orange-600">${d.total}</td>`;
         tbody.appendChild(tr);
     });
 }
@@ -107,41 +106,46 @@ function setupCustomerSearch() {
         tray.innerHTML = '';
         if (val.length < 2) { tray.classList.add('hidden'); return; }
         const matches = customersList.filter(c => c.name.toLowerCase().includes(val));
-        if (matches.length > 0) {
-            tray.classList.remove('hidden');
-            matches.forEach(m => {
-                const d = document.createElement('div');
-                d.className = "p-2 hover:bg-orange-50 cursor-pointer border-b text-sm";
-                d.innerText = m.name;
-                d.onclick = () => { input.value = m.name; document.getElementById('cust-address').value = m.address; tray.classList.add('hidden'); };
-                tray.appendChild(d);
-            });
-        }
+        matches.forEach(m => {
+            const d = document.createElement('div');
+            d.className = "p-3 hover:bg-orange-50 cursor-pointer border-b text-sm";
+            d.innerText = m.name;
+            d.onclick = () => { input.value = m.name; document.getElementById('cust-address').value = m.address; tray.classList.add('hidden'); };
+            tray.appendChild(d);
+        });
+        tray.classList.toggle('hidden', matches.length === 0);
     });
 }
 
-window.saveAndDownload = async () => {
+window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
-    const addr = document.getElementById('cust-address').value;
-    const total = document.getElementById('grand-total').innerText;
-    
-    // Save to Firestore
+    if(!name) return alert("Enter Customer Name");
+
     try {
         await addDoc(collection(db, "documents"), {
             type: currentDocType,
             customerName: name,
-            total: total,
+            total: document.getElementById('grand-total').innerText,
             date: document.getElementById('doc-date').value,
-            createdAt: new Date()
+            createdAt: serverTimestamp()
         });
-        if (name && !customersList.some(c => c.name === name)) {
-            await addDoc(collection(db, "customers"), { name, address: addr });
+        
+        if (!customersList.some(c => c.name === name)) {
+            await addDoc(collection(db, "customers"), { 
+                name, 
+                address: document.getElementById('cust-address').value 
+            });
         }
+        alert("Saved to History!");
         loadHistory();
-    } catch (e) { console.error(e); }
+        loadCustomers();
+    } catch (e) { alert("Error saving"); }
+};
 
-    // PDF Export with "Fit to Page" rules
+window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
+    
+    // Formatting: Hide Empty Rows & Force Table Mode
     document.querySelectorAll('.cost-row').forEach(row => {
         if (!row.querySelector('.item-desc').value.trim()) row.classList.add('hidden-row');
     });
@@ -149,14 +153,16 @@ window.saveAndDownload = async () => {
 
     const opt = {
         margin: 0,
-        filename: `${currentDocType}_${name}.pdf`,
+        filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Export'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    await html2pdf().set(opt).from(element).save();
-    
-    element.classList.remove('pdf-table-mode', 'pdf-single-page');
-    document.querySelectorAll('.hidden-row').forEach(r => r.classList.remove('hidden-row'));
+    try {
+        await html2pdf().set(opt).from(element).save();
+    } finally {
+        element.classList.remove('pdf-table-mode', 'pdf-single-page');
+        document.querySelectorAll('.hidden-row').forEach(r => r.classList.remove('hidden-row'));
+    }
 };
