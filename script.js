@@ -1,105 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Brammeld Contracts | Builder</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        /* PDF specific layout - forces a professional A4 look */
-        .pdf-export-mode { 
-            width: 800px !important; 
-            padding: 40px !important;
-            background: white !important;
-            margin: 0 !important;
-        }
-        /* Strict removal of UI elements in PDF */
-        .pdf-export-mode .no-print, 
-        .pdf-export-mode #toggle-container,
-        .pdf-export-mode .action-cell { 
-            display: none !important; 
-        }
-        .logo-main { height: 160px; width: auto; object-fit: contain; }
-    </style>
-</head>
-<body class="bg-gray-100 font-sans text-gray-900">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
-    <div id="auth-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
-            <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Login</h2>
-            <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none focus:ring-2 focus:ring-orange-500">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-orange-500">
-            <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold">LOG IN</button>
-            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Error: Check Login Details.</p>
-        </div>
-    </div>
+const firebaseConfig = {
+  apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
+  authDomain: "brammeld-invoice-a804f.firebaseapp.com",
+  projectId: "brammeld-invoice-a804f",
+  storageBucket: "brammeld-invoice-a804f.firebasestorage.app",
+  messagingSenderId: "533156932511",
+  appId: "1:533156932511:web:8fadd6e0d7a70e32bbabaa"
+};
 
-    <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen hidden">
-        <div id="document-to-print" class="bg-white">
-            
-            <div class="flex justify-between items-center mb-10 border-b-2 border-slate-100 pb-8">
-                <div class="flex items-center">
-                    <img src="logo.png" alt="Logo" class="logo-main">
-                </div>
-                
-                <div class="flex flex-col items-end">
-                    <div id="toggle-container" class="bg-slate-100 p-1 rounded-lg flex mb-4 no-print">
-                        <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm">QUOTE</button>
-                        <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-5 py-1.5 rounded-md text-sm font-bold">INVOICE</button>
-                    </div>
-                    <h1 id="doc-title" class="text-5xl font-black text-orange-600 uppercase italic leading-none tracking-tighter">QUOTE</h1>
-                </div>
-            </div>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div class="relative">
-                    <input type="text" id="cust-name" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-orange-500" placeholder="Customer Name">
-                    <textarea id="cust-address" rows="2" class="w-full p-3 bg-slate-50 rounded-xl mt-2 outline-none resize-none" placeholder="Address"></textarea>
-                </div>
-                <input type="date" id="doc-date" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none">
-            </div>
+let currentDocType = 'QUOTE';
+let currentUser = null;
 
-            <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none resize-none" placeholder="Job Description..."></textarea>
+window.handleLogin = async () => {
+    const e = document.getElementById('email').value;
+    const p = document.getElementById('password').value;
+    try { await signInWithEmailAndPassword(auth, e, p); } 
+    catch (err) { document.getElementById('auth-error').classList.remove('hidden'); }
+};
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-800 text-white text-[10px] uppercase tracking-widest">
-                        <tr>
-                            <th class="p-4">Description</th>
-                            <th class="p-4 w-24">Rate</th>
-                            <th class="p-4 w-16 text-center">Qty</th>
-                            <th class="p-4 w-24 text-right">Total</th>
-                            <th id="th-action" class="p-4 w-10 no-print"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="line-items"></tbody>
-                </table>
-            </div>
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        document.getElementById('auth-overlay').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        initApp();
+    }
+});
 
-            <div class="flex flex-col items-end mt-10 border-t-2 border-slate-100 pt-6">
-                <div class="text-orange-600 font-black text-4xl px-2 italic uppercase">
-                    TOTAL: <span id="grand-total">£0.00</span>
-                </div>
-            </div>
-        </div>
+function initApp() {
+    document.getElementById('doc-date').valueAsDate = new Date();
+    addLineItem();
+}
 
-        <div class="no-print mt-6 px-2">
-            <button onclick="addLineItem()" class="text-orange-600 font-black flex items-center gap-2 uppercase text-sm">
-                <i data-lucide="plus-circle" class="w-5 h-5"></i> Add Line Item
-            </button>
-        </div>
+window.setDocType = (type) => {
+    currentDocType = type;
+    document.getElementById('doc-title').innerText = type;
+    document.getElementById('toggle-quote').className = type === 'QUOTE' ? 'px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-5 py-1.5 rounded-md text-sm font-bold';
+    document.getElementById('toggle-invoice').className = type === 'INVOICE' ? 'px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-5 py-1.5 rounded-md text-sm font-bold';
+};
 
-        <div class="grid grid-cols-2 gap-4 mt-10 no-print">
-            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl">
-                <i data-lucide="cloud-upload"></i> SAVE TO CLOUD
-            </button>
-            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl">
-                <i data-lucide="file-down"></i> DOWNLOAD PDF
-            </button>
-        </div>
-    </div>
-    <script type="module" src="script.js"></script>
-</body>
-</html>
+window.addLineItem = (desc = '', rate = '0', qty = '1') => {
+    const tbody = document.getElementById('line-items');
+    const row = document.createElement('tr');
+    row.className = "cost-row border-b border-slate-50";
+    row.innerHTML = `
+        <td class="p-3"><textarea class="w-full bg-transparent outline-none item-desc resize-none" rows="1">${desc}</textarea></td>
+        <td class="p-3"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
+        <td class="p-3"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
+        <td class="p-3 font-black text-right line-total text-slate-700">£0.00</td>
+        <td class="p-3 no-print text-center action-cell"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black">×</button></td>
+    `;
+    tbody.appendChild(row);
+    calculateTotals();
+};
+
+window.calculateTotals = () => {
+    let sub = 0;
+    document.querySelectorAll('.cost-row').forEach(row => {
+        const r = parseFloat(row.querySelector('.item-cost').value) || 0;
+        const q = parseFloat(row.querySelector('.item-qty').value) || 0;
+        row.querySelector('.line-total').innerText = `£${(r * q).toFixed(2)}`;
+        sub += (r * q);
+    });
+    document.getElementById('grand-total').innerText = `£${sub.toFixed(2)}`;
+};
+
+window.saveToCloud = async () => {
+    const items = Array.from(document.querySelectorAll('.cost-row')).map(row => ({
+        description: row.querySelector('.item-desc').value,
+        rate: row.querySelector('.item-cost').value,
+        quantity: row.querySelector('.item-qty').value
+    }));
+
+    try {
+        await addDoc(collection(db, "quotes"), {
+            userId: currentUser.uid,
+            customerName: document.getElementById('cust-name').value,
+            customerAddress: document.getElementById('cust-address').value,
+            date: document.getElementById('doc-date').value,
+            jobDescription: document.getElementById('job-desc').value,
+            type: currentDocType,
+            total: document.getElementById('grand-total').innerText.replace('£', ''),
+            items: items,
+            createdAt: serverTimestamp()
+        });
+        alert("Document Saved to Cloud");
+    } catch (e) { alert("Save Error: " + e.message); }
+};
+
+// PDF FIX: Removes UI strictly and forces single-page layout width
+window.downloadPDF = async () => {
+    const element = document.getElementById('document-to-print');
+    const toggle = document.getElementById('toggle-container');
+    const actionCells = document.querySelectorAll('.action-cell');
+    const actionHeader = document.getElementById('th-action');
+    
+    // Hide UI elements
+    toggle.style.display = 'none';
+    actionHeader.style.display = 'none';
+    actionCells.forEach(c => c.style.display = 'none');
+    
+    element.classList.add('pdf-export-mode');
+
+    const opt = {
+        margin: [10, 10],
+        filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Doc'}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+            scale: 3, 
+            useCORS: true,
+            windowWidth: 800 // Forces the layout to be consistent
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+        await html2pdf().set(opt).from(element).save();
+    } finally {
+        // Restore UI
+        toggle.style.display = 'flex';
+        actionHeader.style.display = 'table-cell';
+        actionCells.forEach(c => c.style.display = 'table-cell');
+        element.classList.remove('pdf-export-mode');
+    }
+};
