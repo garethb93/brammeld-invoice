@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
@@ -25,9 +25,7 @@ window.handleLogin = async () => {
     try {
         await signInWithEmailAndPassword(auth, email, pass);
     } catch (err) {
-        const errEl = document.getElementById('auth-error');
-        errEl.classList.remove('hidden');
-        errEl.innerText = "Login Failed: Check details.";
+        document.getElementById('auth-error').classList.remove('hidden');
     }
 };
 
@@ -42,6 +40,7 @@ onAuthStateChanged(auth, (user) => {
 function initApp() {
     document.getElementById('doc-date').valueAsDate = new Date();
     loadCustomers();
+    loadHistory();
     addLineItem();
     setupCustomerSearch();
     lucide.createIcons();
@@ -50,10 +49,8 @@ function initApp() {
 window.setDocType = (type) => {
     currentDocType = type;
     document.getElementById('doc-title').innerText = type;
-    document.getElementById('toggle-quote').classList.toggle('bg-white', type === 'QUOTE');
-    document.getElementById('toggle-quote').classList.toggle('shadow-sm', type === 'QUOTE');
-    document.getElementById('toggle-invoice').classList.toggle('bg-white', type === 'INVOICE');
-    document.getElementById('toggle-invoice').classList.toggle('shadow-sm', type === 'INVOICE');
+    document.getElementById('toggle-quote').className = type === 'QUOTE' ? 'px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-4 py-1 rounded-md text-sm font-bold';
+    document.getElementById('toggle-invoice').className = type === 'INVOICE' ? 'px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-4 py-1 rounded-md text-sm font-bold';
 };
 
 window.addLineItem = () => {
@@ -61,11 +58,11 @@ window.addLineItem = () => {
     const row = document.createElement('tr');
     row.className = "cost-row border-b border-gray-100";
     row.innerHTML = `
-        <td class="p-2 cost-cell"><textarea class="w-full p-2 outline-none resize-none item-desc" rows="1" placeholder="Item description..."></textarea></td>
-        <td class="p-2 cost-cell"><input type="number" class="w-full p-2 outline-none item-cost" value="0" oninput="calculateTotals()"></td>
-        <td class="p-2 cost-cell"><input type="number" class="w-full p-2 outline-none item-qty" value="1" oninput="calculateTotals()"></td>
-        <td class="p-2 cost-cell font-bold text-gray-700 line-total">£0.00</td>
-        <td class="p-2 no-print text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 hover:text-red-600">×</button></td>
+        <td class="p-2 cost-cell"><textarea class="w-full p-1 outline-none item-desc" rows="1"></textarea></td>
+        <td class="p-2 cost-cell"><input type="number" class="w-full p-1 item-cost" value="0" oninput="calculateTotals()"></td>
+        <td class="p-2 cost-cell"><input type="number" class="w-full p-1 item-qty" value="1" oninput="calculateTotals()"></td>
+        <td class="p-2 cost-cell font-bold line-total">£0.00</td>
+        <td class="p-2 no-print"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400">×</button></td>
     `;
     tbody.appendChild(row);
 };
@@ -84,17 +81,29 @@ window.calculateTotals = () => {
 };
 
 async function loadCustomers() {
-    try {
-        const snap = await getDocs(collection(db, "customers"));
-        customersList = snap.docs.map(doc => doc.data());
-    } catch (e) { console.error("Customer load error", e); }
+    const snap = await getDocs(collection(db, "customers"));
+    customersList = snap.docs.map(doc => doc.data());
+}
+
+async function loadHistory() {
+    const q = query(collection(db, "documents"), orderBy("createdAt", "desc"), limit(10));
+    const snap = await getDocs(q);
+    const tbody = document.getElementById('history-list');
+    tbody.innerHTML = '';
+    snap.forEach(doc => {
+        const d = doc.data();
+        const tr = document.createElement('tr');
+        tr.className = "border-b";
+        tr.innerHTML = `<td class="p-3">${d.date}</td><td class="p-3 font-bold">${d.customerName}</td><td class="p-3">${d.type}</td><td class="p-3 font-bold text-orange-600">${d.total}</td>`;
+        tbody.appendChild(tr);
+    });
 }
 
 function setupCustomerSearch() {
     const input = document.getElementById('cust-name');
     const tray = document.getElementById('suggestions');
-    input.addEventListener('input', (e) => {
-        const val = e.target.value.toLowerCase();
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase();
         tray.innerHTML = '';
         if (val.length < 2) { tray.classList.add('hidden'); return; }
         const matches = customersList.filter(c => c.name.toLowerCase().includes(val));
@@ -102,47 +111,52 @@ function setupCustomerSearch() {
             tray.classList.remove('hidden');
             matches.forEach(m => {
                 const d = document.createElement('div');
-                d.className = "p-3 hover:bg-orange-50 cursor-pointer text-sm border-b";
+                d.className = "p-2 hover:bg-orange-50 cursor-pointer border-b text-sm";
                 d.innerText = m.name;
-                d.onclick = () => {
-                    input.value = m.name;
-                    document.getElementById('cust-address').value = m.address;
-                    tray.classList.add('hidden');
-                };
+                d.onclick = () => { input.value = m.name; document.getElementById('cust-address').value = m.address; tray.classList.add('hidden'); };
                 tray.appendChild(d);
             });
-        } else { tray.classList.add('hidden'); }
+        }
     });
 }
 
-window.generatePDF = async () => {
-    // 1. Logic: Save customer if new to Firestore
+window.saveAndDownload = async () => {
     const name = document.getElementById('cust-name').value;
     const addr = document.getElementById('cust-address').value;
-    if (name && !customersList.some(c => c.name === name)) {
-        try {
+    const total = document.getElementById('grand-total').innerText;
+    
+    // Save to Firestore
+    try {
+        await addDoc(collection(db, "documents"), {
+            type: currentDocType,
+            customerName: name,
+            total: total,
+            date: document.getElementById('doc-date').value,
+            createdAt: new Date()
+        });
+        if (name && !customersList.some(c => c.name === name)) {
             await addDoc(collection(db, "customers"), { name, address: addr });
-        } catch(e) {}
-    }
+        }
+        loadHistory();
+    } catch (e) { console.error(e); }
 
-    // 2. Formatting: Rule B (Hide Empty) & Rule C (Table Layout)
+    // PDF Export with "Fit to Page" rules
+    const element = document.getElementById('document-to-print');
     document.querySelectorAll('.cost-row').forEach(row => {
         if (!row.querySelector('.item-desc').value.trim()) row.classList.add('hidden-row');
     });
-    document.getElementById('app-content').classList.add('pdf-table-mode');
+    element.classList.add('pdf-table-mode', 'pdf-single-page');
 
     const opt = {
-        margin: [10, 10],
-        filename: `${currentDocType}_${name || 'Export'}.pdf`,
+        margin: 0,
+        filename: `${currentDocType}_${name}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    try {
-        await html2pdf().set(opt).from(document.getElementById('app-content')).save();
-    } finally {
-        document.querySelectorAll('.hidden-row').forEach(r => r.classList.remove('hidden-row'));
-        document.getElementById('app-content').classList.remove('pdf-table-mode');
-    }
+    await html2pdf().set(opt).from(element).save();
+    
+    element.classList.remove('pdf-table-mode', 'pdf-single-page');
+    document.querySelectorAll('.hidden-row').forEach(r => r.classList.remove('hidden-row'));
 };
