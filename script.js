@@ -18,7 +18,7 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let customersList = [];
 
-// --- Auth ---
+// --- Auth Handling ---
 window.handleLogin = async () => {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -46,8 +46,8 @@ function initApp() {
 window.setDocType = (type) => {
     currentDocType = type;
     document.getElementById('doc-title').innerText = type;
-    document.getElementById('toggle-quote').className = type === 'QUOTE' ? 'px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-4 py-1 rounded-md text-sm font-bold';
-    document.getElementById('toggle-invoice').className = type === 'INVOICE' ? 'px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-4 py-1 rounded-md text-sm font-bold';
+    document.getElementById('toggle-quote').className = type === 'QUOTE' ? 'px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-5 py-1.5 rounded-md text-sm font-bold';
+    document.getElementById('toggle-invoice').className = type === 'INVOICE' ? 'px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-5 py-1.5 rounded-md text-sm font-bold';
 };
 
 window.addLineItem = (desc = '', rate = '0', qty = '1') => {
@@ -55,11 +55,11 @@ window.addLineItem = (desc = '', rate = '0', qty = '1') => {
     const row = document.createElement('tr');
     row.className = "cost-row border-b border-slate-50";
     row.innerHTML = `
-        <td class="p-2 cost-cell"><textarea class="w-full bg-transparent outline-none item-desc resize-none" rows="1">${desc}</textarea></td>
-        <td class="p-2 cost-cell"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
-        <td class="p-2 cost-cell"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
-        <td class="p-2 cost-cell font-black text-right line-total text-slate-700">£0.00</td>
-        <td class="p-2 no-print text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black px-2">×</button></td>
+        <td class="p-3 cost-cell"><textarea class="w-full bg-transparent outline-none item-desc resize-none" rows="1">${desc}</textarea></td>
+        <td class="p-3 cost-cell"><input type="number" class="w-full bg-transparent outline-none item-cost" value="${rate}" oninput="calculateTotals()"></td>
+        <td class="p-3 cost-cell"><input type="number" class="w-full bg-transparent outline-none text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
+        <td class="p-3 cost-cell font-black text-right line-total text-slate-700">£0.00</td>
+        <td class="p-3 no-print text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-400 font-black px-2 hover:text-red-600 transition-colors">×</button></td>
     `;
     tbody.appendChild(row);
     calculateTotals();
@@ -77,14 +77,14 @@ window.calculateTotals = () => {
     document.getElementById('grand-total').innerText = `£${sub.toFixed(2)}`;
 };
 
-// --- History / Deleting ---
+// --- History & Delete ---
 window.deleteQuote = async (id, event) => {
     event.stopPropagation(); 
-    if (window.confirm("ARE YOU SURE?\nThis record will be permanently deleted.")) {
+    if (window.confirm("ARE YOU SURE?\nThis will permanently delete this record from the cloud.")) {
         try {
             await deleteDoc(doc(db, "quotes", id));
             loadHistory();
-        } catch (e) { alert("Error: " + e.message); }
+        } catch (e) { alert("Delete failed: " + e.message); }
     }
 };
 
@@ -109,14 +109,14 @@ async function loadHistory() {
 
         docs.forEach(d => {
             const tr = document.createElement('tr');
-            tr.className = "active:bg-slate-50 transition-colors border-b border-slate-50";
+            tr.className = "active:bg-slate-50 transition-colors border-b border-slate-50 cursor-pointer";
             tr.onclick = () => loadDocumentIntoForm(d);
             tr.innerHTML = `
-                <td class="p-3 text-slate-500 text-xs">${d.date || '---'}</td>
-                <td class="p-3 font-bold text-slate-800">${d.customerName || 'No Name'}</td>
-                <td class="p-3 text-right font-black text-slate-600">£${d.total || '0.00'}</td>
-                <td class="p-3 text-center">
-                    <button onclick="deleteQuote('${d.id}', event)" class="delete-tap-area text-red-500 mx-auto">
+                <td class="p-4 text-slate-500 text-xs">${d.date || '---'}</td>
+                <td class="p-4 font-bold text-slate-800">${d.customerName || 'No Name'}</td>
+                <td class="p-4 text-right font-black text-slate-600">£${d.total || '0.00'}</td>
+                <td class="p-4 text-center">
+                    <button onclick="deleteQuote('${d.id}', event)" class="delete-tap-area text-red-500 mx-auto active:scale-75 transition-transform">
                         <i data-lucide="trash-2" class="w-5 h-5"></i>
                     </button>
                 </td>
@@ -127,10 +127,10 @@ async function loadHistory() {
     } catch (e) { console.error(e); }
 }
 
-// --- Save & Search ---
+// --- Cloud Sync ---
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Enter Name");
+    if(!name) return alert("Enter Customer Name");
     const items = [];
     document.querySelectorAll('.cost-row').forEach(row => {
         items.push({
@@ -151,11 +151,12 @@ window.saveToCloud = async () => {
             items: items,
             createdAt: serverTimestamp()
         });
-        alert("Saved to Cloud");
+        alert("Synced to Cloud Successfully");
         loadHistory();
-    } catch (e) { alert("Error: " + e.message); }
+    } catch (e) { alert("Sync Error: " + e.message); }
 };
 
+// --- Autocomplete ---
 async function loadCustomers() {
     try {
         const snap = await getDocs(collection(db, "customers"));
@@ -173,7 +174,7 @@ function setupCustomerSearch() {
         const matches = customersList.filter(c => c.customerName?.toLowerCase().includes(val));
         matches.forEach(m => {
             const d = document.createElement('div');
-            d.className = "p-3 hover:bg-orange-50 border-b text-sm font-bold";
+            d.className = "p-3 hover:bg-orange-50 border-b text-sm font-bold cursor-pointer";
             d.innerText = m.customerName;
             d.onclick = () => { 
                 input.value = m.customerName; 
@@ -186,7 +187,7 @@ function setupCustomerSearch() {
     });
 }
 
-// --- PDF Logic ---
+// --- PDF Engine ---
 window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
     element.classList.add('pdf-table-mode', 'pdf-single-page');
