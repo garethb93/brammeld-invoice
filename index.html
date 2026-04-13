@@ -8,17 +8,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* PDF Layout: This forces the container to behave during capture */
+        /* PDF Layout: Centering and Page Fit */
         .pdf-export-mode { 
             width: 800px !important; 
             padding: 40px !important;
             background: white !important;
-            margin: 0 !important;
+            margin: 0 auto !important; /* Forces centering in the PDF capture */
             min-height: auto !important;
             overflow: visible !important;
         }
         
-        /* Hide UI elements from the PDF */
+        /* Strict UI removal for PDF */
         .pdf-export-mode .no-print, 
         .pdf-export-mode #toggle-container, 
         .pdf-export-mode .action-cell { 
