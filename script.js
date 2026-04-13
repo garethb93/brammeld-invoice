@@ -18,7 +18,7 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let customersList = [];
 
-// --- Auth ---
+// --- Auth Handling ---
 window.handleLogin = async () => {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -42,7 +42,7 @@ function initApp() {
     setupCustomerSearch();
 }
 
-// --- Logic ---
+// --- App Logic ---
 window.setDocType = (type) => {
     currentDocType = type;
     document.getElementById('doc-title').innerText = type;
@@ -80,10 +80,7 @@ window.calculateTotals = () => {
 // --- History & Delete ---
 window.deleteQuote = async (id, event) => {
     event.stopPropagation(); 
-    // Manual confirmation alert
-    const confirmed = window.confirm("ARE YOU SURE?\nThis will permanently delete this record from the database.");
-    
-    if (confirmed) {
+    if (window.confirm("DELETE RECORD?\nThis will be removed permanently from the system.")) {
         try {
             await deleteDoc(doc(db, "quotes", id));
             loadHistory();
@@ -115,11 +112,11 @@ async function loadHistory() {
             tr.className = "active:bg-slate-100 transition-colors";
             tr.onclick = () => loadDocumentIntoForm(d);
             tr.innerHTML = `
-                <td class="p-3 text-slate-500 text-xs">${d.date || '---'}</td>
+                <td class="p-3 text-slate-500 text-[11px]">${d.date || '---'}</td>
                 <td class="p-3 font-bold text-slate-800">${d.customerName || 'No Name'}</td>
                 <td class="p-3 text-right font-black text-slate-600">£${d.total || '0.00'}</td>
                 <td class="p-3 text-center">
-                    <button onclick="deleteQuote('${d.id}', event)" class="delete-tap-area text-red-600 mx-auto">
+                    <button onclick="deleteQuote('${d.id}', event)" class="delete-tap-area text-red-500 mx-auto">
                         <i data-lucide="trash-2" class="w-5 h-5"></i>
                     </button>
                 </td>
@@ -130,7 +127,7 @@ async function loadHistory() {
     } catch (e) { console.error(e); }
 }
 
-// --- Save & Search ---
+// --- Cloud Sync ---
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
     if(!name) return alert("Enter Customer Name");
@@ -154,14 +151,17 @@ window.saveToCloud = async () => {
             items: items,
             createdAt: serverTimestamp()
         });
-        alert("Document Saved Successfully");
+        alert("Document Synced!");
         loadHistory();
-    } catch (e) { alert("Error saving: " + e.message); }
+    } catch (e) { alert("Error: " + e.message); }
 };
 
+// --- Customer Memory ---
 async function loadCustomers() {
-    const snap = await getDocs(collection(db, "customers"));
-    customersList = snap.docs.map(doc => doc.data());
+    try {
+        const snap = await getDocs(collection(db, "customers"));
+        customersList = snap.docs.map(doc => doc.data());
+    } catch (e) { console.log("Customer fetch skipped"); }
 }
 
 function setupCustomerSearch() {
@@ -187,16 +187,24 @@ function setupCustomerSearch() {
     });
 }
 
+// --- PDF Export ---
 window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
     element.classList.add('pdf-table-mode', 'pdf-single-page');
+    
     const opt = {
         margin: 0,
         filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`,
         image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    try { await html2pdf().set(opt).from(element).save(); } 
-    finally { element.classList.remove('pdf-table-mode', 'pdf-single-page'); }
+
+    try {
+        await html2pdf().set(opt).from(element).save();
+    } catch (e) {
+        alert("PDF Error: Try again on a stable connection.");
+    } finally {
+        element.classList.remove('pdf-table-mode', 'pdf-single-page');
+    }
 };
