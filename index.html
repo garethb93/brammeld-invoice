@@ -3,131 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brammeld Contracts | Builder</title>
+    <title>Brammeld Contracts | Quote & Invoice Builder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @media print { .no-print { display: none !important; } }
         
-        /* PDF Layout Rules */
+        /* PDF Layout Transformation */
         .pdf-table-mode .cost-row { display: table-row !important; }
         .pdf-table-mode .cost-cell { 
             display: table-cell !important; 
             border: 1px solid #e5e7eb; 
             padding: 8px; 
+            font-size: 12px;
         }
         .pdf-table-mode .cost-header { display: table-header-group !important; }
-        .pdf-single-page { width: 210mm; padding: 15mm; margin: 0 auto; }
+        .pdf-single-page { width: 210mm; padding: 15mm; margin: 0 auto; min-height: 297mm; }
 
         .suggestions-list {
             position: absolute; z-index: 50; width: 100%; background: white;
             border: 1px solid #ddd; max-height: 150px; overflow-y: auto;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
         .hidden-row { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans text-gray-900">
 
-    <div id="auth-overlay" class="fixed inset-0 bg-black bg-opacity-90 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-xl max-w-sm w-full text-center">
+    <div id="auth-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
             <img src="logo.png" alt="Logo" class="w-32 mx-auto mb-6">
-            <h2 class="text-xl font-bold mb-4">Staff Login</h2>
-            <input type="email" id="email" placeholder="Email" class="w-full p-2 border rounded mb-3 outline-none">
-            <input type="password" id="password" placeholder="Password" class="w-full p-2 border rounded mb-4 outline-none">
-            <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-2 rounded font-bold hover:bg-orange-700">Login</button>
-            <p id="auth-error" class="text-red-500 text-sm mt-2 hidden">Login Failed</p>
+            <h2 class="text-2xl font-black mb-6 text-slate-800">Staff Portal</h2>
+            <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none focus:ring-2 focus:ring-orange-500">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-orange-500">
+            <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold hover:bg-orange-700 transition transform active:scale-95">Enter System</button>
+            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden font-medium">Invalid email or password.</p>
         </div>
     </div>
 
-    <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-lg min-h-screen my-0 md:my-8 rounded-lg hidden">
+    <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen my-0 md:my-8 rounded-none md:rounded-2xl hidden">
         
         <div id="document-to-print">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b pb-6 gap-4">
-                <img src="logo.png" alt="Brammeld Logo" class="w-48">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10 border-b-2 border-slate-100 pb-8 gap-6">
+                <img src="logo.png" alt="Brammeld Logo" class="w-56">
                 <div class="flex flex-col items-center md:items-end">
-                    <div class="bg-gray-100 p-1 rounded-lg flex mb-2 no-print">
-                        <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm transition">QUOTE</button>
-                        <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-4 py-1 rounded-md text-sm font-bold transition">INVOICE</button>
+                    <div class="bg-slate-100 p-1.5 rounded-xl flex mb-4 no-print">
+                        <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-6 py-2 rounded-lg text-sm font-bold bg-white shadow-md transition-all">QUOTE</button>
+                        <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-6 py-2 rounded-lg text-sm font-bold transition-all text-slate-500">INVOICE</button>
                     </div>
-                    <h1 id="doc-title" class="text-3xl font-black text-orange-600">QUOTE</h1>
+                    <h1 id="doc-title" class="text-4xl font-black text-orange-600 tracking-tighter italic uppercase">QUOTE</h1>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                 <div class="relative">
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Customer</label>
-                    <input type="text" id="cust-name" class="w-full p-3 border-2 border-gray-100 rounded-lg focus:border-orange-500 outline-none" placeholder="Name" autocomplete="off">
-                    <div id="suggestions" class="suggestions-list hidden"></div>
-                    <textarea id="cust-address" rows="3" class="w-full p-3 border-2 border-gray-100 rounded-lg mt-2 focus:border-orange-500 outline-none" placeholder="Address"></textarea>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Customer Details</label>
+                    <input type="text" id="cust-name" class="w-full p-3 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-xl outline-none transition-all font-bold" placeholder="Customer Name" autocomplete="off">
+                    <div id="suggestions" class="suggestions-list hidden rounded-xl"></div>
+                    <textarea id="cust-address" rows="3" class="w-full p-3 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-xl mt-3 outline-none transition-all" placeholder="Full Billing Address"></textarea>
                 </div>
                 <div class="flex flex-col justify-start md:items-end">
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Date</label>
-                    <input type="date" id="doc-date" class="w-full p-3 border-2 border-gray-100 rounded-lg outline-none">
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Date of Issue</label>
+                    <input type="date" id="doc-date" class="w-full md:w-48 p-3 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-xl outline-none font-bold">
                 </div>
             </div>
 
-            <div class="mb-8">
-                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Project Notes</label>
-                <textarea id="job-desc" rows="4" class="w-full p-4 border-2 border-gray-100 rounded-lg outline-none" placeholder="Job details..."></textarea>
+            <div class="mb-10">
+                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Job Description / Notes</label>
+                <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-xl outline-none transition-all placeholder:text-slate-300" placeholder="Scope of works..."></textarea>
             </div>
 
-            <table class="w-full text-left mb-4" id="items-table">
-                <thead class="bg-gray-800 text-white cost-header">
-                    <tr>
-                        <th class="p-3 text-sm">Description</th>
-                        <th class="p-3 text-sm w-24">Cost (£)</th>
-                        <th class="p-3 text-sm w-20">Qty</th>
-                        <th class="p-3 text-sm w-24">Total</th>
-                        <th class="p-3 w-10 no-print"></th>
-                    </tr>
-                </thead>
-                <tbody id="line-items"></tbody>
-            </table>
+            <div class="overflow-hidden rounded-xl border border-slate-100">
+                <table class="w-full text-left" id="items-table">
+                    <thead class="bg-slate-800 text-white cost-header">
+                        <tr>
+                            <th class="p-4 text-xs font-black uppercase tracking-widest">Description</th>
+                            <th class="p-4 text-xs font-black uppercase tracking-widest w-28">Rate (£)</th>
+                            <th class="p-4 text-xs font-black uppercase tracking-widest w-20 text-center">Qty</th>
+                            <th class="p-4 text-xs font-black uppercase tracking-widest w-28 text-right">Total</th>
+                            <th class="p-4 w-12 no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="line-items" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
 
-            <div class="flex flex-col items-end border-t pt-6 gap-2">
-                <div class="flex justify-between w-full max-w-[200px]">
-                    <span class="text-gray-500 font-bold">Subtotal:</span>
-                    <span id="subtotal" class="font-bold">£0.00</span>
+            <div class="flex flex-col items-end mt-8 gap-3 pr-4">
+                <div class="flex justify-between w-full max-w-[220px]">
+                    <span class="text-slate-400 font-bold">Subtotal:</span>
+                    <span id="subtotal" class="font-bold text-slate-700 italic">£0.00</span>
                 </div>
-                <div class="flex justify-between w-full max-w-[200px] border-t-2 border-orange-600 pt-2">
-                    <span class="text-orange-600 font-black text-xl">TOTAL:</span>
-                    <span id="grand-total" class="font-black text-xl">£0.00</span>
+                <div class="flex justify-between w-full max-w-[260px] bg-orange-50 p-4 rounded-xl border-2 border-orange-100">
+                    <span class="text-orange-600 font-black text-xl tracking-tighter uppercase">Grand Total:</span>
+                    <span id="grand-total" class="font-black text-xl text-orange-600 tracking-tight">£0.00</span>
                 </div>
             </div>
         </div>
 
-        <button onclick="addLineItem()" class="no-print flex items-center gap-2 text-orange-600 font-bold mt-4 mb-10">
-            <i data-lucide="plus-circle" class="w-5 h-5"></i> Add Line
+        <button onclick="addLineItem()" class="no-print flex items-center gap-2 text-orange-600 font-black mt-6 mb-12 hover:scale-105 transition transform active:scale-95">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i> ADD NEW LINE
         </button>
 
-        <div class="flex flex-col md:flex-row gap-4 no-print">
-            <button onclick="saveToCloud()" class="flex-1 bg-gray-800 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition">
-                <i data-lucide="cloud-upload"></i> SAVE TO HISTORY
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 no-print mb-16">
+            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-slate-200">
+                <i data-lucide="cloud-upload"></i> SAVE TO CLOUD
             </button>
-            <button onclick="downloadPDF()" class="flex-1 bg-orange-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-700 transition">
+            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-orange-700 transition-all shadow-xl shadow-orange-200">
                 <i data-lucide="file-down"></i> DOWNLOAD PDF
             </button>
         </div>
 
-        <hr class="my-12 no-print">
+        <hr class="border-slate-100 mb-12 no-print">
 
         <div class="no-print">
-            <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-gray-700">
-                <i data-lucide="list"></i> Recent Saves
-            </h3>
-            <div class="bg-gray-50 rounded-xl border overflow-hidden">
+            <div class="flex justify-between items-end mb-6">
+                <h3 class="text-xl font-black text-slate-800 flex items-center gap-2 tracking-tight uppercase italic">
+                    <i data-lucide="history" class="text-orange-600"></i> Recent Activity
+                </h3>
+                <span class="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-tighter">Click row to load</span>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                 <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-200 text-gray-600">
+                    <thead class="bg-slate-50 text-slate-500">
                         <tr>
-                            <th class="p-4">Date</th>
-                            <th class="p-4">Customer</th>
-                            <th class="p-4">Type</th>
-                            <th class="p-4 text-right">Total</th>
+                            <th class="p-4 font-black text-[10px] uppercase tracking-widest">Date</th>
+                            <th class="p-4 font-black text-[10px] uppercase tracking-widest">Customer</th>
+                            <th class="p-4 font-black text-[10px] uppercase tracking-widest">Type</th>
+                            <th class="p-4 font-black text-[10px] uppercase tracking-widest text-right">Total (£)</th>
                         </tr>
                     </thead>
-                    <tbody id="history-list" class="divide-y divide-gray-200"></tbody>
+                    <tbody id="history-list" class="divide-y divide-slate-50">
+                        </tbody>
                 </table>
             </div>
         </div>
