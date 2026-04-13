@@ -15,6 +15,8 @@
         .suggestions-list { position: absolute; z-index: 50; width: 100%; background: white; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
         .hidden-row { display: none !important; }
         .delete-tap-area { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+        /* Ensures logo displays correctly */
+        .logo-img { height: 60px; width: auto; object-fit: contain; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
@@ -31,14 +33,21 @@
 
     <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen hidden">
         <div id="document-to-print">
-            <div class="flex justify-between items-center mb-6 border-b-2 border-slate-100 pb-6">
-                <h1 class="text-2xl font-bold italic text-slate-800">BRAM<span class="text-orange-600">MELD</span></h1>
+            <div class="flex justify-between items-start mb-6 border-b-2 border-slate-100 pb-6">
+                <div class="flex items-center gap-4">
+                    <img src="BRAMMELDCONTRACTSTRANS.jpg" alt="Brammeld Logo" class="logo-img">
+                    <div>
+                        <h1 class="text-2xl font-bold italic text-slate-800 uppercase tracking-tighter leading-none">BRAM<span class="text-orange-600">MELD</span></h1>
+                        <p class="text-[10px] font-bold text-slate-500 tracking-widest uppercase">Contracts</p>
+                    </div>
+                </div>
+                
                 <div class="flex flex-col items-end">
                     <div class="bg-slate-100 p-1 rounded-lg flex mb-3 no-print">
                         <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm">QUOTE</button>
                         <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-4 py-1 rounded-md text-sm font-bold">INVOICE</button>
                     </div>
-                    <h1 id="doc-title" class="text-2xl font-black text-orange-600 uppercase italic">QUOTE</h1>
+                    <h1 id="doc-title" class="text-3xl font-black text-orange-600 uppercase italic">QUOTE</h1>
                 </div>
             </div>
 
@@ -69,7 +78,7 @@
             </div>
 
             <div class="flex flex-col items-end mt-6">
-                <div class="text-orange-600 font-black text-xl px-2">TOTAL: <span id="grand-total">£0.00</span></div>
+                <div class="text-orange-600 font-black text-2xl px-2 italic">TOTAL: <span id="grand-total">£0.00</span></div>
             </div>
         </div>
 
@@ -89,19 +98,17 @@
         <div class="mt-12 no-print border-t pt-8">
             <h3 class="font-black uppercase italic mb-4 text-slate-700 px-1">Recent Activity</h3>
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase">
-                            <tr>
-                                <th class="p-3 text-left">Date</th>
-                                <th class="p-3 text-left">Customer</th>
-                                <th class="p-3 text-right">Total</th>
-                                <th class="p-3 text-center">Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase">
+                        <tr>
+                            <th class="p-3 text-left">Date</th>
+                            <th class="p-3 text-left">Customer</th>
+                            <th class="p-3 text-right">Total</th>
+                            <th class="p-3 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
+                </table>
             </div>
         </div>
     </div>
