@@ -106,32 +106,29 @@ async function loadHistory() {
     lucide.createIcons();
 }
 
-// PDF FIX: NO MORE CUTOFF OR WHITE SPACE
+// PDF FIX: FULLY CENTERED AND SCALED TO ONE PAGE
 window.downloadPDF = async () => {
     const el = document.getElementById('document-to-print');
     const toggle = document.getElementById('toggle-container');
     const actions = document.querySelectorAll('.action-cell');
     const th = document.getElementById('th-action');
     
-    // 1. Hide UI elements
     toggle.style.display = 'none'; th.style.display = 'none';
     actions.forEach(a => a.style.display = 'none');
     
-    // 2. Add scaling class
     el.classList.add('pdf-export-mode');
-
-    // 3. Force scroll to top so the header isn't missed
     window.scrollTo(0, 0);
 
     const opt = {
-        margin: [10, 5, 10, 5],
+        margin: 10,
         filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Brammeld'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
             scale: 2, 
             useCORS: true, 
-            windowWidth: 800,
-            scrollY: 0 // Forces capture from top
+            windowWidth: 800, // Matching the CSS width exactly prevents the rightward shift
+            scrollY: 0,
+            scrollX: 0
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
@@ -139,7 +136,6 @@ window.downloadPDF = async () => {
     try {
         await html2pdf().set(opt).from(el).save();
     } finally {
-        // 4. Restore UI
         toggle.style.display = 'flex'; th.style.display = 'table-cell';
         actions.forEach(a => a.style.display = 'table-cell');
         el.classList.remove('pdf-export-mode');
