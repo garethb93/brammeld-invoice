@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Brammeld Contracts - Invoice Builder</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -26,11 +26,7 @@
   <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2">
   <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-2">
 
-  <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">
-    Login
-  </button>
-
-  <p id="loginError" class="text-red-600 text-sm mt-2 hidden"></p>
+  <button id="loginBtn" class="w-full bg-blue-600 text-white p-2 rounded">Login</button>
 </div>
 
 <!-- APP -->
@@ -38,110 +34,86 @@
 
   <div class="flex justify-between mb-4">
     <h2 class="text-xl font-bold screen-only">Quotes</h2>
-    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">
-      Logout
-    </button>
+    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded screen-only">Logout</button>
   </div>
 
-  <!-- SAVED QUOTES -->
-  <div id="quotesList" class="mb-6 screen-only">
+  <!-- SAVED -->
+  <div class="mb-6 screen-only">
     <h3 class="font-semibold mb-2">Saved Quotes</h3>
     <ul id="savedQuotes" class="border rounded p-2 text-sm"></ul>
   </div>
 
   <!-- BUILDER -->
-  <div id="builder">
+  <div>
 
     <!-- HEADER -->
-    <div class="flex items-center justify-between">
-      <img src="logo.png" class="h-32 max-w-[200px] object-contain">
+    <div class="flex justify-between">
+      <img src="logo.png" class="h-32">
 
       <div class="text-right">
         <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
         <p>brammeldcontracts@hotmail.com</p>
         <p>07894013765</p>
 
-        <!-- PRINT HEADER -->
-        <p id="printDocType" class="text-xl font-semibold mt-2 print-only"></p>
-        <p id="printDate" class="text-sm print-only"></p>
+        <p id="printDocType" class="print-only font-bold mt-2"></p>
+        <p id="printDate" class="print-only"></p>
 
-        <!-- 🔴 THIS IS THE NEW 30-DAY PAYMENT LINE -->
-        <p id="paymentTerms" class="text-sm font-bold mt-1 print-only"></p>
+        <!-- 30 DAY -->
+        <p id="paymentTerms" class="print-only font-bold mt-1"></p>
 
+        <!-- BANK DETAILS -->
+        <div id="paymentDetails" class="print-only mt-2">
+          <p>BRAMMELD CONTRACTS</p>
+          <p>Monzo</p>
+          <p>Sort Code: 04-00-03</p>
+          <p>Account Number: 14081712</p>
+        </div>
       </div>
     </div>
 
-    <!-- DOC TYPE -->
-    <div class="mt-6 screen-only">
-      <label class="block font-semibold">Document Type</label>
-      <select id="docType" class="border p-2 mt-1 rounded">
-        <option value="Quote">Quote</option>
-        <option value="Invoice">Invoice</option>
+    <!-- TYPE -->
+    <div class="mt-4 screen-only">
+      <label>Type</label>
+      <select id="docType" class="border p-2 w-full">
+        <option>Quote</option>
+        <option>Invoice</option>
       </select>
     </div>
 
     <!-- DATE -->
-    <div class="mt-4 screen-only">
-      <label class="block font-semibold">Date</label>
-      <input type="date" id="invoiceDate" class="w-full border p-2 rounded mt-1" />
+    <div class="mt-2 screen-only">
+      <input type="date" id="invoiceDate" class="border p-2 w-full">
     </div>
 
     <!-- CUSTOMER -->
-    <div class="mt-4">
-      <label class="block font-semibold screen-only">Customer Name</label>
-      <input type="text" id="customerName" class="w-full border p-2 rounded mt-1 screen-only" />
-      <p id="printCustomerName" class="print-only font-medium mt-1"></p>
-    </div>
+    <input id="customerName" placeholder="Customer Name" class="border p-2 w-full mt-2 screen-only">
+    <p id="printCustomerName" class="print-only"></p>
 
-    <div class="mt-4">
-      <label class="block font-semibold screen-only">Customer Address</label>
-      <textarea id="customerAddress" class="w-full border p-2 rounded mt-1 screen-only"></textarea>
-      <p id="printCustomerAddress" class="print-only whitespace-pre-line mt-1"></p>
-    </div>
+    <textarea id="customerAddress" class="border p-2 w-full mt-2 screen-only"></textarea>
+    <p id="printCustomerAddress" class="print-only"></p>
 
-    <!-- JOB -->
-    <div class="mt-4">
-      <label class="block font-semibold screen-only">Job Description</label>
-      <textarea id="jobDescription" class="w-full border p-2 rounded mt-1 screen-only"></textarea>
-      <p id="printJobDescription" class="print-only whitespace-pre-line mt-1"></p>
-    </div>
+    <textarea id="jobDescription" class="border p-2 w-full mt-2 screen-only"></textarea>
+    <p id="printJobDescription" class="print-only"></p>
 
-    <!-- COSTS -->
-    <div class="mt-4">
-      <label class="block font-semibold screen-only">Costs</label>
+    <!-- ITEMS -->
+    <div id="lineItems" class="mt-4"></div>
 
-      <div id="lineItems" class="space-y-2 mt-2 screen-only"></div>
-      <div id="printLineItems" class="print-only mt-4 whitespace-pre-line"></div>
+    <button onclick="addItem()" class="bg-blue-600 text-white px-4 py-2 mt-2 screen-only">
+      Add Cost
+    </button>
 
-      <button onclick="addItem()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded screen-only">
-        Add Cost
-      </button>
-    </div>
-
-    <!-- TOTAL -->
-    <div class="mt-4 font-bold text-lg">
-      Total: £<span id="totalAmount">0.00</span>
+    <div class="mt-4 font-bold">
+      Total £<span id="totalAmount">0.00</span>
     </div>
 
     <!-- NOTES -->
-    <div class="mt-4">
-      <label class="block font-semibold screen-only">Notes</label>
-      <textarea id="notes" class="w-full border p-2 rounded mt-1 screen-only">
-Thank you for your business.
-      </textarea>
-
-      <p id="printNotes" class="print-only whitespace-pre-line mt-1"></p>
-    </div>
+    <textarea id="notes" class="border p-2 w-full mt-2 screen-only">Thank you for your business.</textarea>
+    <p id="printNotes" class="print-only"></p>
 
     <!-- BUTTONS -->
-    <div class="mt-6 flex gap-2 screen-only">
-      <button onclick="generatePDF()" class="bg-green-600 text-white px-6 py-2 rounded">
-        Download PDF
-      </button>
-
-      <button onclick="saveQuote()" class="bg-blue-600 text-white px-6 py-2 rounded">
-        Save Quote
-      </button>
+    <div class="mt-4 screen-only">
+      <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2">Download PDF</button>
+      <button onclick="saveQuote()" class="bg-blue-600 text-white px-4 py-2">Save Quote</button>
     </div>
 
   </div>
