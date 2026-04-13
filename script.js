@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, limit } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
@@ -18,7 +18,7 @@ const db = getFirestore(app);
 let currentDocType = 'QUOTE';
 let customersList = [];
 
-// Auth
+// --- Auth ---
 window.handleLogin = async () => {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -37,12 +37,13 @@ onAuthStateChanged(auth, (user) => {
 function initApp() {
     document.getElementById('doc-date').valueAsDate = new Date();
     loadCustomers();
-    loadHistory();
+    loadHistory(); // This will now fetch from 'quotes'
     addLineItem();
     setupCustomerSearch();
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
+// --- Toggle Logic ---
 window.setDocType = (type) => {
     currentDocType = type;
     document.getElementById('doc-title').innerText = type;
@@ -50,6 +51,7 @@ window.setDocType = (type) => {
     document.getElementById('toggle-invoice').className = type === 'INVOICE' ? 'px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-4 py-1 rounded-md text-sm font-bold';
 };
 
+// --- Table Logic ---
 window.addLineItem = () => {
     const tbody = document.getElementById('line-items');
     const row = document.createElement('tr');
@@ -77,25 +79,68 @@ window.calculateTotals = () => {
     document.getElementById('grand-total').innerText = `£${total.toFixed(2)}`;
 };
 
-async function loadCustomers() {
-    const snap = await getDocs(collection(db, "customers"));
-    customersList = snap.docs.map(doc => doc.data());
-}
+// --- Firestore Sync (Updated to match your screenshot) ---
+window.saveToCloud = async () => {
+    const name = document.getElementById('cust-name').value;
+    const addr = document.getElementById('cust-address').value;
+    const items = [];
+    
+    document.querySelectorAll('.cost-row').forEach(row => {
+        items.push({
+            description: row.querySelector('.item-desc').value,
+            rate: row.querySelector('.item-cost').value,
+            quantity: row.querySelector('.item-qty').value
+        });
+    });
+
+    try {
+        // Saving to 'quotes' collection as per your screenshot
+        await addDoc(collection(db, "quotes"), {
+            customerName: name,
+            customerAddress: addr,
+            date: document.getElementById('doc-date').value,
+            jobDescription: document.getElementById('job-desc').value,
+            type: currentDocType,
+            total: document.getElementById('grand-total').innerText.replace('£', ''),
+            items: items,
+            createdAt: serverTimestamp()
+        });
+
+        // Save to customers collection for memory
+        if (name && !customersList.some(c => c.customerName === name)) {
+            await addDoc(collection(db, "customers"), { customerName: name, customerAddress: addr });
+        }
+
+        alert("Saved to Database!");
+        loadHistory();
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+};
 
 async function loadHistory() {
-    // Simple fetch without ordering first to avoid index errors
-    const snap = await getDocs(collection(db, "documents"));
+    const snap = await getDocs(collection(db, "quotes"));
     const tbody = document.getElementById('history-list');
     tbody.innerHTML = '';
     
-    // Sort locally to ensure it works immediately
-    const docs = snap.docs.map(d => d.data()).sort((a,b) => b.createdAt?.seconds - a.createdAt?.seconds);
+    const docs = snap.docs.map(d => d.data()).sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     
-    docs.slice(0, 10).forEach(d => {
+    docs.forEach(d => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-4">${d.date}</td><td class="p-4 font-bold">${d.customerName}</td><td class="p-4">${d.type}</td><td class="p-4 text-right font-bold text-orange-600">${d.total}</td>`;
+        tr.className = "border-b";
+        tr.innerHTML = `
+            <td class="p-4">${d.date || '---'}</td>
+            <td class="p-4 font-bold">${d.customerName || 'No Name'}</td>
+            <td class="p-4">${d.type || 'QUOTE'}</td>
+            <td class="p-4 text-right font-bold text-orange-600">£${d.total}</td>
+        `;
         tbody.appendChild(tr);
     });
+}
+
+async function loadCustomers() {
+    const snap = await getDocs(collection(db, "customers"));
+    customersList = snap.docs.map(doc => doc.data());
 }
 
 function setupCustomerSearch() {
@@ -105,47 +150,24 @@ function setupCustomerSearch() {
         const val = input.value.toLowerCase();
         tray.innerHTML = '';
         if (val.length < 2) { tray.classList.add('hidden'); return; }
-        const matches = customersList.filter(c => c.name.toLowerCase().includes(val));
+        const matches = customersList.filter(c => c.customerName?.toLowerCase().includes(val));
         matches.forEach(m => {
             const d = document.createElement('div');
             d.className = "p-3 hover:bg-orange-50 cursor-pointer border-b text-sm";
-            d.innerText = m.name;
-            d.onclick = () => { input.value = m.name; document.getElementById('cust-address').value = m.address; tray.classList.add('hidden'); };
+            d.innerText = m.customerName;
+            d.onclick = () => { 
+                input.value = m.customerName; 
+                document.getElementById('cust-address').value = m.customerAddress; 
+                tray.classList.add('hidden'); 
+            };
             tray.appendChild(d);
         });
         tray.classList.toggle('hidden', matches.length === 0);
     });
 }
 
-window.saveToCloud = async () => {
-    const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Enter Customer Name");
-
-    try {
-        await addDoc(collection(db, "documents"), {
-            type: currentDocType,
-            customerName: name,
-            total: document.getElementById('grand-total').innerText,
-            date: document.getElementById('doc-date').value,
-            createdAt: serverTimestamp()
-        });
-        
-        if (!customersList.some(c => c.name === name)) {
-            await addDoc(collection(db, "customers"), { 
-                name, 
-                address: document.getElementById('cust-address').value 
-            });
-        }
-        alert("Saved to History!");
-        loadHistory();
-        loadCustomers();
-    } catch (e) { alert("Error saving"); }
-};
-
 window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
-    
-    // Formatting: Hide Empty Rows & Force Table Mode
     document.querySelectorAll('.cost-row').forEach(row => {
         if (!row.querySelector('.item-desc').value.trim()) row.classList.add('hidden-row');
     });
@@ -153,16 +175,13 @@ window.downloadPDF = async () => {
 
     const opt = {
         margin: 0,
-        filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Export'}.pdf`,
+        filename: `${currentDocType}_${document.getElementById('cust-name').value}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    try {
-        await html2pdf().set(opt).from(element).save();
-    } finally {
-        element.classList.remove('pdf-table-mode', 'pdf-single-page');
-        document.querySelectorAll('.hidden-row').forEach(r => r.classList.remove('hidden-row'));
-    }
+    await html2pdf().set(opt).from(element).save();
+    element.classList.remove('pdf-table-mode', 'pdf-single-page');
+    document.querySelectorAll('.hidden-row').forEach(r => r.classList.remove('hidden-row'));
 };
