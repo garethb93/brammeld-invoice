@@ -8,18 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Hidden container for PDF generation */
-        #pdf-template { display: none; }
-        
         .logo-main { height: 160px; width: auto; object-fit: contain; }
-        
-        /* Ensure inputs look like text in PDF */
-        .pdf-view input, .pdf-view textarea { 
-            border: none !important; 
-            background: transparent !important; 
-            padding: 0 !important;
-            appearance: none;
-        }
+        /* Prevent scrollbars during capture */
+        body { overflow-x: hidden; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
