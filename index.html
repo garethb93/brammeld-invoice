@@ -18,10 +18,12 @@
         /* Strict removal of UI elements in PDF */
         .pdf-export-mode .no-print, 
         .pdf-export-mode #toggle-container,
-        .pdf-export-mode .action-cell { 
+        .pdf-export-mode .action-cell,
+        .pdf-export-mode .delete-btn { 
             display: none !important; 
         }
         .logo-main { height: 160px; width: auto; object-fit: contain; }
+        .suggestions-list { position: absolute; z-index: 50; width: 100%; background: white; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
@@ -56,6 +58,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div class="relative">
                     <input type="text" id="cust-name" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-orange-500" placeholder="Customer Name">
+                    <div id="suggestions" class="suggestions-list hidden rounded-xl shadow-lg"></div>
                     <textarea id="cust-address" rows="2" class="w-full p-3 bg-slate-50 rounded-xl mt-2 outline-none resize-none" placeholder="Address"></textarea>
                 </div>
                 <input type="date" id="doc-date" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none">
@@ -98,6 +101,25 @@
             <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl">
                 <i data-lucide="file-down"></i> DOWNLOAD PDF
             </button>
+        </div>
+
+        <div class="mt-16 no-print border-t pt-10">
+            <h3 class="font-black uppercase italic mb-6 text-slate-700 px-1 flex items-center gap-2 text-lg">
+                <i data-lucide="history" class="w-6 h-6 text-orange-600"></i> Recent Activity
+            </h3>
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase">
+                        <tr>
+                            <th class="p-4 text-left">Date</th>
+                            <th class="p-4 text-left">Customer</th>
+                            <th class="p-4 text-right">Total</th>
+                            <th class="p-4 text-center">Manage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
         </div>
     </div>
     <script type="module" src="script.js"></script>
