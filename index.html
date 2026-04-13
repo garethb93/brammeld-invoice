@@ -8,12 +8,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .pdf-export-mode { width: 850px !important; padding: 50px !important; background: white !important; margin: 0 !important; }
-        .pdf-export-mode .no-print, .pdf-export-mode #toggle-container, .pdf-export-mode .action-cell { display: none !important; }
+        /* PDF Layout: Forces a fixed width to ensure single-page scaling */
+        .pdf-export-mode { 
+            width: 800px !important; 
+            padding: 40px !important;
+            background: white !important;
+            margin: 0 !important;
+        }
+        /* Strict removal of UI during PDF capture */
+        .pdf-export-mode .no-print, 
+        .pdf-export-mode #toggle-container, 
+        .pdf-export-mode .action-cell { 
+            display: none !important; 
+        }
         .logo-main { height: 160px; width: auto; object-fit: contain; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
+
     <div id="auth-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
             <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Portal</h2>
@@ -36,42 +48,44 @@
                     <h1 id="doc-title" class="text-5xl font-black text-orange-600 uppercase italic tracking-tighter">QUOTE</h1>
                 </div>
             </div>
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <input type="text" id="cust-name" class="p-3 bg-slate-50 rounded-xl font-bold outline-none" placeholder="Customer Name">
                 <input type="date" id="doc-date" class="p-3 bg-slate-50 rounded-xl font-bold outline-none">
                 <textarea id="cust-address" rows="2" class="col-span-full p-3 bg-slate-50 rounded-xl outline-none" placeholder="Address"></textarea>
             </div>
+            
             <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none" placeholder="Job Description..."></textarea>
+            
             <table class="w-full text-left">
                 <thead class="bg-slate-800 text-white text-[10px] uppercase">
-                    <tr><th class="p-4">Description</th><th class="p-4 w-24">Rate</th><th class="p-4 w-16 text-center">Qty</th><th class="p-4 w-24 text-right">Total</th><th id="th-action" class="no-print"></th></tr>
+                    <tr>
+                        <th class="p-4">Description</th>
+                        <th class="p-4 w-24">Rate</th>
+                        <th class="p-4 w-16 text-center">Qty</th>
+                        <th class="p-4 w-24 text-right">Total</th>
+                        <th id="th-action" class="no-print"></th>
+                    </tr>
                 </thead>
                 <tbody id="line-items"></tbody>
             </table>
+            
             <div class="flex flex-col items-end mt-10 border-t-2 pt-6">
                 <div class="text-orange-600 font-black text-4xl italic">TOTAL: <span id="grand-total">£0.00</span></div>
             </div>
         </div>
+
         <div class="no-print mt-6"><button onclick="addLineItem()" class="text-orange-600 font-black uppercase text-sm">+ Add Line Item</button></div>
+        
         <div class="grid grid-cols-2 gap-4 mt-10 no-print">
             <button onclick="saveToCloud()" class="bg-slate-800 text-white py-5 rounded-xl font-bold">SAVE CLOUD</button>
             <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold">DOWNLOAD PDF</button>
         </div>
 
         <div class="mt-16 no-print border-t pt-10">
-            <h3 class="font-black uppercase italic mb-6 text-slate-700 flex items-center gap-2">
-                <i data-lucide="history" class="w-6 h-6 text-orange-600"></i> Records
-            </h3>
+            <h3 class="font-black uppercase italic mb-6">Recent Records</h3>
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
                 <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase">
-                        <tr>
-                            <th class="p-4 text-left">Date</th>
-                            <th class="p-4 text-left">Customer</th>
-                            <th class="p-4 text-right">Total</th>
-                            <th class="p-4 text-center">Manage</th>
-                        </tr>
-                    </thead>
                     <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
