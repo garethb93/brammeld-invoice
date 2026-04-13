@@ -13,32 +13,31 @@
         .pdf-table-mode .cost-cell { display: table-cell !important; border: 1px solid #e5e7eb; padding: 8px; font-size: 12px; }
         .pdf-single-page { width: 210mm; padding: 15mm; margin: 0 auto; min-height: 297mm; }
         .suggestions-list { position: absolute; z-index: 50; width: 100%; background: white; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
-        .hidden-row { display: none !important; }
         .delete-tap-area { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-        /* Ensures logo displays correctly */
-        .logo-img { height: 60px; width: auto; object-fit: contain; }
+        .logo-img { height: 75px; width: auto; object-fit: contain; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
 
     <div id="auth-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
-            <h2 class="text-2xl font-black mb-6 text-slate-800">Staff Login</h2>
+            <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Portal</h2>
             <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none focus:ring-2 focus:ring-orange-500">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-orange-500">
-            <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold">Sign In</button>
-            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Error signing in.</p>
+            <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold">LOG IN</button>
+            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Invalid Login.</p>
         </div>
     </div>
 
     <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen hidden">
-        <div id="document-to-print">
+        <div id="document-to-print" class="bg-white">
+            
             <div class="flex justify-between items-start mb-6 border-b-2 border-slate-100 pb-6">
                 <div class="flex items-center gap-4">
-                    <img src="BRAMMELDCONTRACTSTRANS.jpg" alt="Brammeld Logo" class="logo-img">
+                    <img src="logo.png" alt="Brammeld Contracts" class="logo-img">
                     <div>
-                        <h1 class="text-2xl font-bold italic text-slate-800 uppercase tracking-tighter leading-none">BRAM<span class="text-orange-600">MELD</span></h1>
-                        <p class="text-[10px] font-bold text-slate-500 tracking-widest uppercase">Contracts</p>
+                        <h1 class="text-2xl font-black italic text-slate-800 uppercase tracking-tighter leading-none">BRAM<span class="text-orange-600">MELD</span></h1>
+                        <p class="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">Contracts</p>
                     </div>
                 </div>
                 
@@ -47,7 +46,7 @@
                         <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-4 py-1 rounded-md text-sm font-bold bg-white shadow-sm">QUOTE</button>
                         <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-4 py-1 rounded-md text-sm font-bold">INVOICE</button>
                     </div>
-                    <h1 id="doc-title" class="text-3xl font-black text-orange-600 uppercase italic">QUOTE</h1>
+                    <h1 id="doc-title" class="text-3xl font-black text-orange-600 uppercase italic leading-none">QUOTE</h1>
                 </div>
             </div>
 
@@ -55,21 +54,21 @@
                 <div class="relative">
                     <input type="text" id="cust-name" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-orange-500" placeholder="Customer Name">
                     <div id="suggestions" class="suggestions-list hidden rounded-xl shadow-lg"></div>
-                    <textarea id="cust-address" rows="2" class="w-full p-3 bg-slate-50 rounded-xl mt-2 outline-none" placeholder="Address"></textarea>
+                    <textarea id="cust-address" rows="2" class="w-full p-3 bg-slate-50 rounded-xl mt-2 outline-none resize-none" placeholder="Customer Address"></textarea>
                 </div>
                 <input type="date" id="doc-date" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none">
             </div>
 
-            <textarea id="job-desc" rows="3" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none" placeholder="Job Description"></textarea>
+            <textarea id="job-desc" rows="3" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none resize-none" placeholder="Job Description..."></textarea>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-800 text-white text-[10px] uppercase">
+                    <thead class="bg-slate-800 text-white text-[10px] uppercase tracking-widest">
                         <tr>
                             <th class="p-3">Description</th>
-                            <th class="p-3 w-20">Rate</th>
-                            <th class="p-3 w-12 text-center">Qty</th>
-                            <th class="p-3 w-20 text-right">Total</th>
+                            <th class="p-3 w-24">Rate</th>
+                            <th class="p-3 w-16 text-center">Qty</th>
+                            <th class="p-3 w-24 text-right">Total</th>
                             <th class="p-3 w-10 no-print"></th>
                         </tr>
                     </thead>
@@ -77,34 +76,38 @@
                 </table>
             </div>
 
-            <div class="flex flex-col items-end mt-6">
-                <div class="text-orange-600 font-black text-2xl px-2 italic">TOTAL: <span id="grand-total">£0.00</span></div>
+            <div class="flex flex-col items-end mt-8 border-t pt-4">
+                <div class="text-orange-600 font-black text-3xl px-2 italic uppercase">
+                    TOTAL: <span id="grand-total">£0.00</span>
+                </div>
             </div>
         </div>
 
-        <button onclick="addLineItem()" class="no-print text-orange-600 font-bold mt-4 flex items-center gap-1 uppercase text-xs px-2">
+        <button onclick="addLineItem()" class="no-print text-orange-600 font-black flex items-center gap-1 uppercase text-xs mt-4 px-2">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Line Item
         </button>
 
         <div class="grid grid-cols-2 gap-4 mt-10 no-print">
-            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition">
-                <i data-lucide="cloud-upload"></i> SAVE TO CLOUD
+            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 shadow-lg">
+                <i data-lucide="cloud-upload"></i> SAVE CLOUD
             </button>
-            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition">
+            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 shadow-lg">
                 <i data-lucide="file-down"></i> DOWNLOAD PDF
             </button>
         </div>
 
         <div class="mt-12 no-print border-t pt-8">
-            <h3 class="font-black uppercase italic mb-4 text-slate-700 px-1">Recent Activity</h3>
-            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <h3 class="font-black uppercase italic mb-4 text-slate-700 px-1 flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-orange-600"></i> Recent Records
+            </h3>
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-md">
                 <table class="w-full text-sm">
                     <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase">
                         <tr>
                             <th class="p-3 text-left">Date</th>
                             <th class="p-3 text-left">Customer</th>
                             <th class="p-3 text-right">Total</th>
-                            <th class="p-3 text-center">Action</th>
+                            <th class="p-3 text-center">Delete</th>
                         </tr>
                     </thead>
                     <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
