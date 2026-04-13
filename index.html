@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Brammeld Contracts - Invoice Builder</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -41,7 +41,7 @@
     </button>
   </div>
 
-  <!-- SAVED -->
+  <!-- SAVED QUOTES -->
   <div class="mb-6 screen-only">
     <h3 class="font-semibold mb-2">Saved Quotes</h3>
     <ul id="savedQuotes" class="border rounded p-2 text-sm"></ul>
@@ -50,8 +50,9 @@
   <!-- BUILDER -->
   <div>
 
-    <div class="flex justify-between">
-      <img src="logo.png" class="h-24">
+    <!-- HEADER -->
+    <div class="flex justify-between items-center">
+      <img src="logo.png" class="h-24 object-contain">
 
       <div class="text-right">
         <h1 class="text-2xl font-bold">Brammeld Contracts</h1>
@@ -66,42 +67,45 @@
 
     <!-- TYPE -->
     <div class="mt-4 screen-only">
-      <select id="docType" class="border p-2">
+      <select id="docType" class="border p-2 rounded">
         <option value="Quote">Quote</option>
         <option value="Invoice">Invoice</option>
       </select>
     </div>
 
     <!-- DATE -->
-    <div class="mt-4 screen-only">
-      <input type="date" id="invoiceDate" class="border p-2 w-full">
-    </div>
+    <input type="date" id="invoiceDate" class="w-full border p-2 mt-2 rounded screen-only">
 
     <!-- CUSTOMER -->
-    <input id="customerName" class="border p-2 w-full mt-4" placeholder="Customer Name">
-    <textarea id="customerAddress" class="border p-2 w-full mt-2" placeholder="Address"></textarea>
+    <input id="customerName" placeholder="Customer Name" class="w-full border p-2 mt-2 rounded screen-only">
+    <textarea id="customerAddress" placeholder="Customer Address" class="w-full border p-2 mt-2 rounded screen-only"></textarea>
+
+    <p id="printCustomerName" class="print-only"></p>
+    <p id="printCustomerAddress" class="print-only whitespace-pre-line"></p>
 
     <!-- JOB -->
-    <textarea id="jobDescription" class="border p-2 w-full mt-2" placeholder="Job"></textarea>
+    <textarea id="jobDescription" placeholder="Job Description" class="w-full border p-2 mt-2 rounded screen-only"></textarea>
+    <p id="printJobDescription" class="print-only whitespace-pre-line"></p>
 
     <!-- ITEMS -->
     <div id="lineItems" class="mt-4"></div>
 
-    <button onclick="addItem()" class="bg-blue-600 text-white px-4 py-2 mt-2 screen-only">
+    <button onclick="addItem()" class="bg-blue-600 text-white px-4 py-2 mt-2 rounded screen-only">
       Add Cost
     </button>
 
+    <div id="printLineItems" class="print-only mt-2 whitespace-pre-line"></div>
+
     <!-- TOTAL -->
-    <div class="mt-4 font-bold">
-      Total: £<span id="totalAmount">0.00</span>
-    </div>
+    <h2 class="mt-4 font-bold">Total: £<span id="totalAmount">0.00</span></h2>
 
     <!-- NOTES -->
-    <textarea id="notes" class="border p-2 w-full mt-2">Thank you for your business.</textarea>
+    <textarea id="notes" class="w-full border p-2 mt-2 rounded screen-only">Thank you for your business.</textarea>
+    <p id="printNotes" class="print-only whitespace-pre-line"></p>
 
     <!-- ✅ PAYMENT DETAILS BACK -->
-    <div id="paymentDetails" class="mt-4 print-only">
-      <h3 class="font-bold">Payment Details</h3>
+    <div id="paymentDetails" class="print-only mt-4">
+      <p><strong>Payment Details:</strong></p>
       <p>BRAMMELD CONTRACTS</p>
       <p>Monzo</p>
       <p>Sort Code: 04-00-03</p>
@@ -110,11 +114,11 @@
 
     <!-- BUTTONS -->
     <div class="mt-4 screen-only">
-      <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2">
+      <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2 rounded">
         Download PDF
       </button>
 
-      <button onclick="saveQuote()" class="bg-blue-600 text-white px-4 py-2">
+      <button onclick="saveQuote()" class="bg-blue-600 text-white px-4 py-2 rounded">
         Save Quote
       </button>
     </div>
