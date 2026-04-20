@@ -61,7 +61,7 @@ window.calculateTotals = () => {
 
 window.saveToCloud = async () => {
     const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Customer Name Required");
+    if(!name) return alert("Name Required");
     const items = Array.from(document.querySelectorAll('.cost-row')).map(row => ({
         description: row.querySelector('.item-desc').value,
         rate: row.querySelector('.item-cost').value,
@@ -103,39 +103,35 @@ async function loadHistory() {
     });
 }
 
-// THE FINAL PDF FIX (Padding and Positioning)
+// FULL RESET OF PDF LOGIC
 window.downloadPDF = async () => {
     const element = document.getElementById('document-to-print');
     const inputs = element.querySelectorAll('input, textarea');
     const replacements = [];
 
-    // 1. Prepare: Convert Inputs to static text so padding isn't lost
+    // 1. Swap inputs for static text to keep padding clean
     inputs.forEach(input => {
         const replacement = document.createElement('div');
-        replacement.className = 'pdf-replacement-text';
-        
-        // Match specific styling for PDF
-        if (input.id === 'cust-name') replacement.style.fontWeight = '900', replacement.style.fontSize = '1.5rem';
-        if (input.classList.contains('item-cost') || input.classList.contains('item-qty')) replacement.style.textAlign = 'right';
-        
+        replacement.className = 'pdf-replacement-text font-bold';
+        if (input.classList.contains('item-cost') || input.classList.contains('item-qty')) {
+            replacement.style.textAlign = 'right';
+        }
         replacement.innerText = input.value;
         input.style.display = 'none';
         input.parentNode.insertBefore(replacement, input);
         replacements.push({ div: replacement, input: input });
     });
 
-    // 2. Lock layout and scroll to top
     element.classList.add('force-pdf-layout');
-    window.scrollTo(0, 0);
 
     const opt = {
-        margin: 10,
+        margin: [10, 10, 10, 10], // Force 10mm margin on ALL sides
         filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Brammeld'}.pdf`,
         image: { type: 'jpeg', quality: 1 },
         html2canvas: { 
             scale: 3, 
             useCORS: true,
-            windowWidth: 800,
+            windowWidth: 800, // Forces the capture to think the screen is small (prevents right shift)
             scrollY: 0
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -144,7 +140,6 @@ window.downloadPDF = async () => {
     try {
         await html2pdf().set(opt).from(element).save();
     } finally {
-        // 3. Restore Inputs
         replacements.forEach(item => {
             item.input.style.display = 'block';
             item.div.remove();
