@@ -16,6 +16,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentUserId = null;
+let customerMemory = []; // Stores the database names/addresses
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -34,6 +35,31 @@ document.getElementById("loginBtn").onclick = async () => {
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
+// --- EMMAFLO STYLE CUSTOMER SELECTION ---
+window.showCustomerMemories = (val) => {
+    const container = document.getElementById('customer-memories');
+    if (val.length < 1) { container.classList.add('hidden'); return; }
+    
+    // Filter the memory list by what user is typing
+    const matches = customerMemory.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
+    
+    if (matches.length > 0) {
+        container.innerHTML = matches.map(c => `
+            <div class="p-4 bg-white hover:bg-orange-50 cursor-pointer text-sm font-bold border-b border-gray-100 transition" 
+                 onclick="window.selectCustomer('${c.name.replace(/'/g, "\\'")}', '${(c.address || "").replace(/\n/g, "\\n").replace(/'/g, "\\")}')">
+                ${c.name}
+            </div>
+        `).join('');
+        container.classList.remove('hidden');
+    } else { container.classList.add('hidden'); }
+};
+
+window.selectCustomer = (name, addr) => {
+    document.getElementById('customerName').value = name;
+    document.getElementById('customerAddress').value = addr;
+    document.getElementById('customer-memories').classList.add('hidden');
+};
+
 window.addItem = function(desc="", qty=1, rate=0) {
   const row = document.createElement("div");
   row.className = "grid grid-cols-12 gap-2 items-center bg-gray-50 p-2 rounded-xl border border-transparent mb-1";
@@ -41,7 +67,7 @@ window.addItem = function(desc="", qty=1, rate=0) {
     <div class="col-span-8"><input class="w-full bg-transparent p-1 font-bold outline-none desc-in" value="${desc}" placeholder="Description"></div>
     <div class="col-span-1 text-center"><input type="number" class="w-full bg-transparent p-1 text-center font-bold outline-none qty-in" value="${qty}"></div>
     <div class="col-span-2 text-right"><input type="number" class="w-full bg-transparent p-1 text-right font-bold outline-none rate-in" value="${rate}"></div>
-    <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold delete-btn" type="button">×</button></div>
+    <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold" type="button">×</button></div>
   `;
   document.getElementById("lineItems").appendChild(row);
   row.querySelector("button").onclick = () => { row.remove(); updateTotal(); };
@@ -109,10 +135,9 @@ window.deleteQuote = async function (id, e) {
 
 async function loadQuotes() {
   const container = document.getElementById("savedQuotes");
-  const suggestionList = document.getElementById("customerSuggestions");
-  if (!container || !suggestionList) return;
+  if (!container) return;
   container.innerHTML = "";
-  suggestionList.innerHTML = ""; 
+  customerMemory = []; 
   const uniqueNames = new Set();
   try {
     const q = query(collection(db, "quotes"), orderBy("createdAt", "desc"));
@@ -120,13 +145,13 @@ async function loadQuotes() {
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const id = docSnap.id;
-      // Memory/Suggestion Logic
+      
+      // Memory Logic for "EmmaFlo" Dropdown
       if (d.customerName && !uniqueNames.has(d.customerName)) {
         uniqueNames.add(d.customerName);
-        const opt = document.createElement("option");
-        opt.value = d.customerName;
-        suggestionList.appendChild(opt);
+        customerMemory.push({ name: d.customerName, address: d.address || "" });
       }
+
       const btn = document.createElement("div");
       btn.className = "group text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer mb-2 transition";
       btn.innerHTML = `
