@@ -8,9 +8,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .logo-main { height: 160px; width: auto; object-fit: contain; }
-        /* Prevent scrollbars during capture */
-        body { overflow-x: hidden; }
+        /* PDF FIXES: These rules only trigger during export */
+        .force-pdf-layout { 
+            width: 800px !important; 
+            padding: 40px !important; 
+            background: white !important;
+        }
+        
+        .force-pdf-layout .no-print { display: none !important; }
+        
+        /* Ensures the table doesn't collapse or shift right */
+        .force-pdf-layout table { width: 100% !important; border-collapse: collapse !important; }
+        .force-pdf-layout th { border-bottom: 2px solid #334155 !important; padding: 12px 8px !important; }
+        .force-pdf-layout td { 
+            display: table-cell !important; 
+            padding: 12px 8px !important; 
+            border-bottom: 1px solid #f1f5f9 !important;
+            vertical-align: top;
+        }
+
+        .logo-main { height: 140px; width: auto; object-fit: contain; }
+        
+        /* Text styling for the PDF replacement divs */
+        .pdf-replacement-text { 
+            white-space: pre-wrap; 
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            color: #1e293b;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
@@ -26,7 +50,7 @@
     </div>
 
     <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen hidden">
-        <div id="document-to-print" class="bg-white p-4">
+        <div id="document-to-print" class="bg-white">
             <div class="flex justify-between items-center mb-10 border-b-2 border-slate-100 pb-8">
                 <img src="logo.png" alt="Logo" class="logo-main">
                 <div class="flex flex-col items-end">
