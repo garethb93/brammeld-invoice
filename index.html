@@ -4,33 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Brammeld Contracts Builder</title>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="module" src="script.js"></script>
-
   <style>
     @media print {
       @page { size: A4; margin: 0; }
       body { background: white !important; -webkit-print-color-adjust: exact; }
       .screen-only { display: none !important; }
       .print-only { display: block !important; }
-      
-      .print-container { 
-        width: 100% !important; 
-        margin: 0 !important; 
-        padding: 30px !important;
-        transform: scale(0.95); 
-        transform-origin: top center;
-        box-shadow: none !important;
-      }
-      
-      .no-print, button, .delete-btn, [type="button"], .group button { 
-        display: none !important; 
-        visibility: hidden !important; 
-        opacity: 0 !important;
-      }
+      .print-container { width: 100% !important; margin: 0 !important; padding: 30px !important; transform: scale(0.95); transform-origin: top center; box-shadow: none !important; }
+      .no-print, button, .delete-btn, [type="button"] { display: none !important; visibility: hidden !important; }
     }
-
     .print-only { display: none; }
     .brand-italic { font-style: italic; font-weight: 900; letter-spacing: -0.05em; }
     .brand-orange { color: #ea580c; }
@@ -39,7 +23,6 @@
     #savedQuotes { max-height: 400px; overflow-y: auto; }
   </style>
 </head>
-
 <body class="bg-gray-100 text-gray-900 font-sans">
 
 <div id="loginSection" class="max-w-md mx-auto bg-white shadow-2xl p-8 rounded-2xl mt-20 border border-gray-100">
@@ -52,7 +35,6 @@
 </div>
 
 <div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-2xl p-6 md:p-12 rounded-2xl my-10 print-container">
-
   <div class="flex justify-between items-center mb-8 pb-4 border-b screen-only">
     <h2 class="text-xl brand-italic uppercase brand-orange">Record Database</h2>
     <button id="logoutBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold uppercase hover:bg-black transition">Logout</button>
@@ -82,7 +64,6 @@
             <input id="customerName" list="customerSuggestions" autocomplete="off" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
             <datalist id="customerSuggestions"></datalist> 
             <p id="printCustomerName" class="print-only text-2xl font-black"></p>
-            
             <textarea id="customerAddress" placeholder="Site Address" class="w-full border-none p-0 mt-1 focus:ring-0 text-gray-500 screen-only" rows="2"></textarea>
             <p id="printCustomerAddress" class="print-only text-gray-500 whitespace-pre-line mt-1 font-bold"></p>
         </div>
@@ -113,9 +94,7 @@
 
     <div class="mt-8 flex flex-col items-end border-t-4 border-gray-900 pt-4">
         <p id="paymentTerms" class="text-xs font-bold text-gray-400 uppercase mb-1"></p>
-        <div class="text-5xl brand-italic italic">
-            TOTAL: <span class="brand-orange">£</span><span id="totalAmount">0.00</span>
-        </div>
+        <div class="text-5xl brand-italic italic">TOTAL: <span class="brand-orange">£</span><span id="totalAmount">0.00</span></div>
     </div>
 
     <div class="mt-6">
@@ -138,6 +117,5 @@
     </div>
   </div>
 </div>
-
 </body>
 </html>
