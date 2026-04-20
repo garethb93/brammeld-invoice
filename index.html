@@ -21,7 +21,6 @@
     .brand-bg-orange { background-color: #ea580c; }
     .logo-img { height: 180px; width: auto; object-fit: contain; }
     #savedQuotes { max-height: 400px; overflow-y: auto; }
-    /* EmmaFlo Style Memory Dropdown */
     #customer-memories { z-index: 9999; background: white; border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
   </style>
 </head>
@@ -54,7 +53,7 @@
         <p class="font-black text-lg">07894013765</p>
         <div class="mt-4">
             <p id="printDocType" class="text-6xl brand-italic brand-orange uppercase italic leading-none"></p>
-            <p id="invoiceIDDisplay" class="font-black text-gray-400 text-xl mt-1"></p>
+            <p id="invoiceIDDisplay" class="font-black text-gray-400 text-xl mt-1">#------</p>
             <p id="printDate" class="font-bold text-gray-500"></p>
         </div>
       </div>
@@ -65,7 +64,6 @@
             <label class="text-[10px] font-black uppercase text-gray-400 block mb-1">Bill To</label>
             <input id="customerName" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only" oninput="showCustomerMemories(this.value)" autocomplete="off">
             <div id="customer-memories" class="hidden absolute left-0 right-0 rounded-xl overflow-hidden mt-1"></div>
-            
             <p id="printCustomerName" class="print-only text-2xl font-black"></p>
             <textarea id="customerAddress" placeholder="Site Address" class="w-full border-none p-0 mt-1 focus:ring-0 text-gray-500 screen-only" rows="2"></textarea>
             <p id="printCustomerAddress" class="print-only text-gray-500 whitespace-pre-line mt-1 font-bold"></p>
