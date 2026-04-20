@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"; // This was a copy error in prev msg, fixed to getFirestore
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
@@ -13,9 +13,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-// Use correct firestore import
-import { getFirestore as dbFunc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-const db = dbFunc(app);
+const db = getFirestore(app);
 
 let currentUserId = null;
 let customerMemory = [];
@@ -27,7 +25,8 @@ window.generateInvoiceNumber = function() {
     const datePart = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear().toString().slice(-2)}`;
     const randPart = Math.floor(Math.random() * 90 + 10);
     currentInvoiceNum = `${datePart}-${randPart}`;
-    document.getElementById('invoiceIDDisplay').innerText = `#${currentInvoiceNum}`;
+    const display = document.getElementById('invoiceIDDisplay');
+    if(display) display.innerText = `#${currentInvoiceNum}`;
 };
 
 onAuthStateChanged(auth, (user) => {
@@ -42,8 +41,10 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.getElementById("loginBtn").onclick = async () => {
-  try { await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value); } 
-  catch (e) { alert("Login Error"); }
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("password").value;
+  try { await signInWithEmailAndPassword(auth, email, pass); } 
+  catch (e) { alert("Login Error: " + e.message); }
 };
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
@@ -76,15 +77,14 @@ window.addItem = function(desc="", qty=1, rate=0) {
     <div class="col-span-8"><input class="w-full bg-transparent p-1 font-bold outline-none desc-in" value="${desc}" placeholder="Description"></div>
     <div class="col-span-1 text-center"><input type="number" class="w-full bg-transparent p-1 text-center font-bold outline-none qty-in" value="${qty}"></div>
     <div class="col-span-2 text-right"><input type="number" class="w-full bg-transparent p-1 text-right font-bold outline-none rate-in" value="${rate}"></div>
-    <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold" type="button">×</button></div>
+    <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold" type="button" onclick="this.parentElement.parentElement.remove(); window.updateTotal();">×</button></div>
   `;
   document.getElementById("lineItems").appendChild(row);
-  row.querySelector("button").onclick = () => { row.remove(); updateTotal(); };
   row.querySelectorAll("input").forEach(i => i.oninput = updateTotal);
   updateTotal();
 };
 
-function updateTotal() {
+window.updateTotal = function() {
   let total = 0;
   [...document.getElementById("lineItems").children].forEach(row => {
     const q = row.querySelector(".qty-in").value || 0;
@@ -92,7 +92,7 @@ function updateTotal() {
     total += (parseFloat(q) * parseFloat(r));
   });
   document.getElementById("totalAmount").innerText = total.toFixed(2);
-}
+};
 
 window.generatePDF = function() {
   const type = document.getElementById("docType").value;
@@ -102,7 +102,8 @@ window.generatePDF = function() {
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
   document.getElementById("printJobDescription").innerText = document.getElementById("jobDescription").value;
   document.getElementById("printNotes").innerText = document.getElementById("notes").value;
-  document.getElementById("invoiceIDDisplay").innerText = `#${currentInvoiceNum}`; // FIXED: Force sync before print
+  // Ensure the PDF ID matches the current state
+  document.getElementById('invoiceIDDisplay').innerText = `#${currentInvoiceNum}`;
   document.getElementById("paymentTerms").innerText = (type === "Invoice") ? "PAYMENT DUE WITHIN 30 DAYS" : "";
   document.getElementById("paymentDetails").style.display = (type === "Invoice") ? "block" : "none";
   window.print();
@@ -130,22 +131,17 @@ window.saveQuote = async function () {
     createdAt: serverTimestamp()
   };
   try {
-    const { addDoc, collection } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     await addDoc(collection(db, "quotes"), data);
     alert("Record Saved Successfully");
     generateInvoiceNumber(); 
     loadQuotes();
-  } catch(e) { alert("Save Failed"); }
+  } catch(e) { alert("Save Failed: " + e.message); }
 };
 
 window.deleteQuote = async function (id, e) {
   e.stopPropagation(); 
   if (confirm("Are you sure you want to delete this record?")) {
-    try { 
-      const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-      await deleteDoc(doc(db, "quotes", id)); 
-      loadQuotes(); 
-    } 
+    try { await deleteDoc(doc(db, "quotes", id)); loadQuotes(); } 
     catch (error) { alert("Error deleting record"); }
   }
 };
@@ -157,7 +153,6 @@ async function loadQuotes() {
   customerMemory = []; 
   const uniqueNames = new Set();
   try {
-    const { query, collection, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const q = query(collection(db, "quotes"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
     snap.forEach(docSnap => {
