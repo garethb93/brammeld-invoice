@@ -97,12 +97,12 @@ window.saveQuote = async function () {
   const data = {
     userId: currentUserId,
     customerName: name,
-    invoiceID: currentInvoiceID,
     customerAddress: document.getElementById("customerAddress").value,
     jobDescription: document.getElementById("jobDescription").value,
     total: document.getElementById("totalAmount").innerText,
     items: items,
     type: document.getElementById("docType").value,
+    date: document.getElementById("invoiceDate").value, // Matches your DB screenshot
     createdAt: serverTimestamp()
   };
 
@@ -119,28 +119,31 @@ async function loadQuotes() {
   container.innerHTML = "";
   
   try {
-    const q = query(collection(db, "quotes"), where("userId","==",currentUserId), orderBy("createdAt", "desc"));
+    // Pointing exactly to the "quotes" collection seen in your screenshot
+    const q = query(collection(db, "quotes"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
 
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const btn = document.createElement("button");
       btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center";
-      btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.invoiceID || 'Record'}</p><p class="font-black">${d.customerName}</p></div><p class="font-black">£${d.total}</p>`;
+      
+      // Using 'date' as the ID label to match your existing data
+      btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p><p class="font-black">${d.customerName || 'Unnamed'}</p></div><p class="font-black">£${d.total || '0.00'}</p>`;
       
       btn.onclick = () => {
           document.getElementById("customerName").value = d.customerName || "";
           document.getElementById("customerAddress").value = d.customerAddress || "";
           document.getElementById("jobDescription").value = d.jobDescription || "";
           document.getElementById("docType").value = d.type || "Quote";
-          currentInvoiceID = d.invoiceID || "N/A";
-          document.getElementById("invoiceIDDisplay").innerText = `#${currentInvoiceID}`;
+          document.getElementById("invoiceDate").value = d.date || "";
           document.getElementById("lineItems").innerHTML = "";
           if(d.items) {
             d.items.forEach(i => addItem(i.desc, i.qty, i.rate));
           } else {
             addItem();
           }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
       };
       container.appendChild(btn);
     });
