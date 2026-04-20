@@ -20,11 +20,12 @@ let customerMemory = [];
 let currentInvoiceNum = "";
 
 // --- RANDOM INVOICE NUMBER GENERATOR ---
-function generateInvoiceNumber() {
+window.generateInvoiceNumber = function() {
     const d = new Date();
     currentInvoiceNum = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear().toString().slice(-2)}-${Math.floor(Math.random()*90+10)}`;
-    document.getElementById('invoiceIDDisplay').innerText = `#${currentInvoiceNum}`;
-}
+    const display = document.getElementById('invoiceIDDisplay');
+    if(display) display.innerText = `#${currentInvoiceNum}`;
+};
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -32,8 +33,8 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("appSection").classList.remove("hidden");
     document.getElementById("invoiceDate").valueAsDate = new Date();
-    generateInvoiceNumber();
     loadQuotes();
+    generateInvoiceNumber(); 
   }
 });
 
@@ -44,7 +45,6 @@ document.getElementById("loginBtn").onclick = async () => {
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
-// --- CUSTOMER MEMORY LOGIC ---
 window.showCustomerMemories = (val) => {
     const container = document.getElementById('customer-memories');
     if (val.length < 1) { container.classList.add('hidden'); return; }
@@ -128,7 +128,7 @@ window.saveQuote = async function () {
   try {
     await addDoc(collection(db, "quotes"), data);
     alert("Record Saved Successfully");
-    generateInvoiceNumber(); // Generate new ID for next one
+    generateInvoiceNumber(); 
     loadQuotes();
   } catch(e) { alert("Save Failed"); }
 };
@@ -188,4 +188,7 @@ async function loadQuotes() {
     });
   } catch (e) { console.error(e); }
 }
+
+// Start everything
 addItem();
+generateInvoiceNumber();
