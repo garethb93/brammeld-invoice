@@ -101,13 +101,13 @@ window.saveQuote = async function () {
 
   try {
     await addDoc(collection(db, "quotes"), data);
-    alert("Record Cloud Saved");
+    alert("Record Saved Successfully");
     loadQuotes();
   } catch(e) { alert("Save Failed"); }
 };
 
 window.deleteQuote = async function (id, e) {
-  e.stopPropagation(); // Prevents the record from loading when clicking delete
+  e.stopPropagation(); 
   if (confirm("Are you sure you want to delete this record? This cannot be undone.")) {
     try {
       await deleteDoc(doc(db, "quotes", id));
@@ -120,9 +120,13 @@ window.deleteQuote = async function (id, e) {
 
 async function loadQuotes() {
   const container = document.getElementById("savedQuotes");
+  const suggestionList = document.getElementById("customerSuggestions");
   if (!container) return;
-  container.innerHTML = "";
   
+  container.innerHTML = "";
+  if (suggestionList) suggestionList.innerHTML = "";
+  const uniqueNames = new Set();
+
   try {
     const q = query(collection(db, "quotes"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
@@ -130,9 +134,18 @@ async function loadQuotes() {
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const id = docSnap.id;
+
+      // Autocomplete logic
+      if (d.customerName && !uniqueNames.has(d.customerName)) {
+        uniqueNames.add(d.customerName);
+        const opt = document.createElement("option");
+        opt.value = d.customerName;
+        suggestionList.appendChild(opt);
+      }
+
+      // Record Card UI
       const btn = document.createElement("div");
-      btn.className = "group relative text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer";
-      
+      btn.className = "group relative text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer mb-2 transition";
       btn.innerHTML = `
         <div class="flex-1">
           <p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p>
@@ -140,12 +153,9 @@ async function loadQuotes() {
           <p class="text-xs text-gray-400 font-bold uppercase">${d.type || 'Quote'}</p>
         </div>
         <div class="flex items-center gap-4">
-          <p class="font-black">£${d.total || '0.00'}</p>
-          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-100 text-red-500 p-2 rounded-lg transition-colors no-print">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5 v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-            </svg>
+          <p class="font-black text-lg">£${d.total || '0.00'}</p>
+          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-500 hover:text-white text-red-500 p-2 rounded-lg transition no-print">
+            Delete
           </button>
         </div>
       `;
@@ -163,16 +173,12 @@ async function loadQuotes() {
             d.items.forEach(i => {
                 addItem(i.description || "", i.quantity || 1, i.rate || 0);
             });
-          } else {
-            addItem();
-          }
+          } else { addItem(); }
           window.scrollTo({ top: 0, behavior: 'smooth' });
       };
       container.appendChild(btn);
     });
-  } catch (e) {
-    console.error("Error loading quotes: ", e);
-  }
+  } catch (e) { console.error(e); }
 }
 
 addItem();
