@@ -21,6 +21,8 @@
     .brand-bg-orange { background-color: #ea580c; }
     .logo-img { height: 180px; width: auto; object-fit: contain; }
     #savedQuotes { max-height: 400px; overflow-y: auto; }
+    /* EmmaFlo Style Memory Dropdown */
+    #customer-memories { z-index: 9999; background: white; border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans">
@@ -59,16 +61,17 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-8">
-        <div>
+        <div class="relative">
             <label class="text-[10px] font-black uppercase text-gray-400 block mb-1">Bill To</label>
-            <input id="customerName" list="customerSuggestions" autocomplete="off" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
-            <datalist id="customerSuggestions"></datalist> 
+            <input id="customerName" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only" oninput="showCustomerMemories(this.value)" autocomplete="off">
+            <div id="customer-memories" class="hidden absolute left-0 right-0 rounded-xl overflow-hidden mt-1"></div>
+            
             <p id="printCustomerName" class="print-only text-2xl font-black"></p>
             <textarea id="customerAddress" placeholder="Site Address" class="w-full border-none p-0 mt-1 focus:ring-0 text-gray-500 screen-only" rows="2"></textarea>
             <p id="printCustomerAddress" class="print-only text-gray-500 whitespace-pre-line mt-1 font-bold"></p>
         </div>
-        <div class="screen-only space-y-2">
-            <select id="docType" class="w-full border p-3 rounded-xl bg-gray-50 font-bold">
+        <div class="screen-only space-y-2 text-right">
+            <select id="docType" class="w-full border p-3 rounded-xl bg-gray-50 font-bold uppercase">
                 <option value="Quote">QUOTE</option>
                 <option value="Invoice">INVOICE</option>
             </select>
