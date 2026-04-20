@@ -81,8 +81,8 @@ window.saveQuote = async function () {
   if (!name) return alert("Missing Customer Name");
   
   const items = [...document.getElementById("lineItems").children].map(row => ({
-    desc: row.querySelector(".desc-in").value,
-    qty: row.querySelector(".qty-in").value,
+    description: row.querySelector(".desc-in").value, // Key matched to DB screenshot
+    quantity: row.querySelector(".qty-in").value,    // Key matched to DB screenshot
     rate: row.querySelector(".rate-in").value
   }));
 
@@ -91,6 +91,7 @@ window.saveQuote = async function () {
     customerName: name,
     customerAddress: document.getElementById("customerAddress").value,
     jobDescription: document.getElementById("jobDescription").value,
+    notes: document.getElementById("notes").value,
     total: document.getElementById("totalAmount").innerText,
     items: items,
     type: document.getElementById("docType").value,
@@ -119,18 +120,22 @@ async function loadQuotes() {
       const btn = document.createElement("button");
       btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center";
       
-      // Pointing to 'date' and 'customerName' to match your Firestore screenshot
       btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p><p class="font-black">${d.customerName || 'Unnamed'}</p></div><p class="font-black">£${d.total || '0.00'}</p>`;
       
       btn.onclick = () => {
           document.getElementById("customerName").value = d.customerName || "";
           document.getElementById("customerAddress").value = d.customerAddress || "";
           document.getElementById("jobDescription").value = d.jobDescription || "";
+          document.getElementById("notes").value = d.notes || "Thank you for your business.";
           document.getElementById("docType").value = d.type || "Quote";
           document.getElementById("invoiceDate").value = d.date || "";
+          
           document.getElementById("lineItems").innerHTML = "";
-          if(d.items) {
-            d.items.forEach(i => addItem(i.desc, i.qty, i.rate));
+          if(d.items && Array.isArray(d.items)) {
+            d.items.forEach(i => {
+                // Mapping DB keys (description/quantity) to the UI fields
+                addItem(i.description || "", i.quantity || 1, i.rate || 0);
+            });
           } else {
             addItem();
           }
