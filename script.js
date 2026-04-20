@@ -16,7 +16,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentUserId = null;
-let customerMemory = []; // Stores the database names/addresses
+let customerMemory = [];
+let currentInvoiceNum = "";
+
+// --- RANDOM INVOICE NUMBER GENERATOR ---
+function generateInvoiceNumber() {
+    const d = new Date();
+    currentInvoiceNum = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear().toString().slice(-2)}-${Math.floor(Math.random()*90+10)}`;
+    document.getElementById('invoiceIDDisplay').innerText = `#${currentInvoiceNum}`;
+}
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -24,6 +32,7 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("appSection").classList.remove("hidden");
     document.getElementById("invoiceDate").valueAsDate = new Date();
+    generateInvoiceNumber();
     loadQuotes();
   }
 });
@@ -35,14 +44,11 @@ document.getElementById("loginBtn").onclick = async () => {
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
-// --- EMMAFLO STYLE CUSTOMER SELECTION ---
+// --- CUSTOMER MEMORY LOGIC ---
 window.showCustomerMemories = (val) => {
     const container = document.getElementById('customer-memories');
     if (val.length < 1) { container.classList.add('hidden'); return; }
-    
-    // Filter the memory list by what user is typing
     const matches = customerMemory.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
-    
     if (matches.length > 0) {
         container.innerHTML = matches.map(c => `
             <div class="p-4 bg-white hover:bg-orange-50 cursor-pointer text-sm font-bold border-b border-gray-100 transition" 
@@ -108,6 +114,7 @@ window.saveQuote = async function () {
   }));
   const data = {
     userId: currentUserId,
+    invoiceNumber: currentInvoiceNum,
     customerName: name,
     address: document.getElementById("customerAddress").value,
     jobDescription: document.getElementById("jobDescription").value,
@@ -121,6 +128,7 @@ window.saveQuote = async function () {
   try {
     await addDoc(collection(db, "quotes"), data);
     alert("Record Saved Successfully");
+    generateInvoiceNumber(); // Generate new ID for next one
     loadQuotes();
   } catch(e) { alert("Save Failed"); }
 };
@@ -145,20 +153,17 @@ async function loadQuotes() {
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const id = docSnap.id;
-      
-      // Memory Logic for "EmmaFlo" Dropdown
       if (d.customerName && !uniqueNames.has(d.customerName)) {
         uniqueNames.add(d.customerName);
         customerMemory.push({ name: d.customerName, address: d.address || "" });
       }
-
       const btn = document.createElement("div");
       btn.className = "group text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer mb-2 transition";
       btn.innerHTML = `
         <div class="flex-1">
-          <p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p>
+          <p class="text-[10px] font-black brand-orange uppercase">${d.invoiceNumber || 'No ID'}</p>
           <p class="font-black text-sm">${d.customerName || 'Unnamed'}</p>
-          <p class="text-[10px] text-gray-400 font-bold uppercase">${d.type || 'Quote'}</p>
+          <p class="text-[10px] text-gray-400 font-bold uppercase">${d.date || ''}</p>
         </div>
         <div class="flex items-center gap-3">
           <p class="font-black text-sm">£${d.total || '0.00'}</p>
@@ -166,6 +171,8 @@ async function loadQuotes() {
         </div>
       `;
       btn.onclick = () => {
+          currentInvoiceNum = d.invoiceNumber || "";
+          document.getElementById('invoiceIDDisplay').innerText = `#${currentInvoiceNum}`;
           document.getElementById("customerName").value = d.customerName || "";
           document.getElementById("customerAddress").value = d.address || ""; 
           document.getElementById("jobDescription").value = d.jobDescription || "";
