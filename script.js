@@ -1,14 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, serverTimestamp, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
-  authDomain: "brammeld-invoice-a804f.firebaseapp.com",
-  projectId: "brammeld-invoice-a804f",
-  storageBucket: "brammeld-invoice-a804f.firebasestorage.app",
-  messagingSenderId: "533156932511",
-  appId: "1:533156932511:web:8fadd6e0d7a70e32bbabaa"
+    apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
+    authDomain: "brammeld-invoice-a804f.firebaseapp.com",
+    projectId: "brammeld-invoice-a804f",
+    storageBucket: "brammeld-invoice-a804f.firebasestorage.app",
+    messagingSenderId: "533156932511",
+    appId: "1:533156932511:web:8fadd6e0d7a70e32bbabaa"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -75,7 +75,7 @@ window.saveToCloud = async () => {
 
 async function loadHistory() {
     if(!currentUser) return;
-    const q = query(collection(db, "quotes"), where("userId", "==", currentUser.uid));
+    const q = query(collection(db, "quotes"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
     const tbody = document.getElementById('history-list');
     tbody.innerHTML = '';
@@ -96,69 +96,59 @@ async function loadHistory() {
             <td class="p-4 font-bold">${data.customerName}</td>
             <td class="p-4 text-right font-black">£${data.total}</td>
             <td class="p-4 text-center">
-                <button onclick="event.stopPropagation(); if(confirm('Delete record?')) deleteDoc(doc(db, 'quotes', '${d.id}')).then(loadHistory)" class="text-red-500">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
+                <button onclick="event.stopPropagation(); if(confirm('Delete?')) deleteDoc(doc(db, 'quotes', '${d.id}')).then(loadHistory)" class="text-red-500">×</button>
             </td>
         `;
         tbody.appendChild(tr);
     });
-    lucide.createIcons();
 }
 
-// THE FINAL PDF CENTERING FIX
+// THE FINAL PDF FIX (Padding and Positioning)
 window.downloadPDF = async () => {
-    const original = document.getElementById('document-to-print');
-    const clone = original.cloneNode(true);
-    
-    // 1. Clean UI elements
-    clone.querySelectorAll('.no-print').forEach(el => el.remove());
-    const toggle = clone.querySelector('#toggle-container'); if(toggle) toggle.remove();
-    const th = clone.querySelector('#th-action'); if(th) th.remove();
-    clone.querySelectorAll('.action-cell').forEach(el => el.remove());
+    const element = document.getElementById('document-to-print');
+    const inputs = element.querySelectorAll('input, textarea');
+    const replacements = [];
 
-    // 2. Map Input values to static text
-    clone.querySelector('#cust-name').outerHTML = `<div style="font-weight:bold; font-size:1.4rem;">${document.getElementById('cust-name').value}</div>`;
-    clone.querySelector('#doc-date').outerHTML = `<div>${document.getElementById('doc-date').value}</div>`;
-    clone.querySelector('#cust-address').outerHTML = `<div style="white-space: pre-wrap; margin-top:10px; color:#475569;">${document.getElementById('cust-address').value}</div>`;
-    clone.querySelector('#job-desc').outerHTML = `<div style="white-space: pre-wrap; margin: 30px 0; min-height:120px; color:#1e293b;">${document.getElementById('job-desc').value}</div>`;
-    
-    const originalItems = original.querySelectorAll('.cost-row');
-    clone.querySelectorAll('.cost-row').forEach((row, index) => {
-        const desc = originalItems[index].querySelector('.item-desc').value;
-        const rate = originalItems[index].querySelector('.item-cost').value;
-        const qty = originalItems[index].querySelector('.item-qty').value;
-        const total = originalItems[index].querySelector('.line-total').innerText;
-        row.innerHTML = `
-            <td class="p-3" style="border-bottom:1px solid #f1f5f9;">${desc}</td>
-            <td class="p-3" style="border-bottom:1px solid #f1f5f9;">£${rate}</td>
-            <td class="p-3 text-center" style="border-bottom:1px solid #f1f5f9;">${qty}</td>
-            <td class="p-3 text-right font-bold" style="border-bottom:1px solid #f1f5f9;">${total}</td>
-        `;
+    // 1. Prepare: Convert Inputs to static text so padding isn't lost
+    inputs.forEach(input => {
+        const replacement = document.createElement('div');
+        replacement.className = 'pdf-replacement-text';
+        
+        // Match specific styling for PDF
+        if (input.id === 'cust-name') replacement.style.fontWeight = '900', replacement.style.fontSize = '1.5rem';
+        if (input.classList.contains('item-cost') || input.classList.contains('item-qty')) replacement.style.textAlign = 'right';
+        
+        replacement.innerText = input.value;
+        input.style.display = 'none';
+        input.parentNode.insertBefore(replacement, input);
+        replacements.push({ div: replacement, input: input });
     });
 
-    // 3. THE CENTERING WRAPPER
-    const pdfWrapper = document.createElement('div');
-    pdfWrapper.style.width = "210mm"; // Standard A4 Width
-    pdfWrapper.style.minHeight = "297mm"; // Standard A4 Height
-    pdfWrapper.style.backgroundColor = "white";
-    pdfWrapper.style.display = "flex";
-    pdfWrapper.style.flexDirection = "column";
-    pdfWrapper.style.alignItems = "center";
-    pdfWrapper.style.paddingTop = "10mm";
-
-    clone.style.width = "190mm"; // Internal printable area
-    clone.style.margin = "0 auto";
-    
-    pdfWrapper.appendChild(clone);
+    // 2. Lock layout and scroll to top
+    element.classList.add('force-pdf-layout');
+    window.scrollTo(0, 0);
 
     const opt = {
-        margin: 0,
+        margin: 10,
         filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Brammeld'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, width: 793 }, // 793px = 210mm at 96dpi
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+            scale: 3, 
+            useCORS: true,
+            windowWidth: 800,
+            scrollY: 0
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    await html2pdf().set(opt).from(pdfWrapper).save();
+    try {
+        await html2pdf().set(opt).from(element).save();
+    } finally {
+        // 3. Restore Inputs
+        replacements.forEach(item => {
+            item.input.style.display = 'block';
+            item.div.remove();
+        });
+        element.classList.remove('force-pdf-layout');
+    }
 };
