@@ -14,7 +14,7 @@
       body { background: white !important; -webkit-print-color-adjust: exact; }
       .screen-only { display: none !important; }
       .print-only { display: block !important; }
-      /* Scale everything down slightly to ensure it fits on 1 page */
+      /* Scale to fit 1 page */
       .print-container { 
         width: 100% !important; 
         margin: 0 !important; 
@@ -22,7 +22,8 @@
         transform: scale(0.98); 
         transform-origin: top center;
       }
-      .no-print { display: none !important; }
+      /* STRICT HIDE FOR PDF */
+      .no-print { display: none !important; visibility: hidden !important; opacity: 0 !important; }
     }
     .print-only { display: none; }
     .no-print { transition: opacity 0.2s; }
@@ -30,8 +31,6 @@
     .brand-italic { font-style: italic; font-weight: 900; letter-spacing: -0.05em; }
     .brand-orange { color: #ea580c; }
     .brand-bg-orange { background-color: #ea580c; }
-    
-    /* Bigger Logo logic */
     .logo-img { height: 180px; width: auto; object-fit: contain; }
   </style>
 </head>
@@ -43,7 +42,7 @@
   <div class="space-y-4">
     <input id="email" type="email" placeholder="Email" class="w-full border p-3 rounded-xl bg-gray-50 outline-none">
     <input id="password" type="password" placeholder="Password" class="w-full border p-3 rounded-xl bg-gray-50 outline-none">
-    <button id="loginBtn" class="w-full brand-bg-orange text-white p-4 rounded-xl font-bold uppercase hover:opacity-90">Login</button>
+    <button id="loginBtn" class="w-full brand-bg-orange text-white p-4 rounded-xl font-bold uppercase hover:opacity-90 transition">Login</button>
   </div>
 </div>
 
@@ -129,8 +128,8 @@
     </div>
 
     <div class="mt-10 flex gap-4 screen-only">
-      <button onclick="saveQuote()" class="flex-1 bg-gray-800 text-white p-4 rounded-xl font-bold uppercase hover:bg-black">Save Data</button>
-      <button onclick="generatePDF()" class="flex-1 brand-bg-orange text-white p-4 rounded-xl font-bold uppercase hover:bg-orange-700">Download PDF</button>
+      <button onclick="saveQuote()" class="flex-1 bg-gray-800 text-white p-4 rounded-xl font-bold uppercase hover:bg-black transition">Save Data</button>
+      <button onclick="generatePDF()" class="flex-1 brand-bg-orange text-white p-4 rounded-xl font-bold uppercase hover:bg-orange-700 transition">Download PDF</button>
     </div>
   </div>
 </div>
