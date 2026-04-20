@@ -1,101 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Brammeld Contracts | Builder</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        /* PDF PRINT STYLES - Forced during generation */
-        .pdf-capture-container {
-            width: 700px !important; /* FIXED WIDTH - STOP THE SHIFT */
-            padding: 40px !important;
-            background: white !important;
-            margin: 0 !important;
-        }
-        
-        .pdf-capture-container .no-print { display: none !important; }
-        
-        .pdf-capture-container table { 
-            width: 100% !important; 
-            border-collapse: collapse !important; 
-            table-layout: fixed !important;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Brammeld Contracts - Invoice Builder</title>
 
-        .pdf-capture-container td, .pdf-capture-container th {
-            padding: 12px 8px !important;
-            border-bottom: 1px solid #f1f5f9 !important;
-            font-size: 14px !important;
-        }
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="script.js"></script>
 
-        .logo-main { height: 140px; width: auto; object-fit: contain; }
-        .replacement-text { white-space: pre-wrap; color: #1e293b; }
-    </style>
+  <style>
+    @media print {
+      body { background: white !important; p: 0 !important; }
+      .screen-only { display: none !important; }
+      .print-only { display: block !important; }
+      .print-container { width: 100% !important; margin: 0 !important; box-shadow: none !important; }
+    }
+    .print-only { display: none; }
+    
+    /* Brammeld Branding Styles */
+    .brand-italic { font-style: italic; font-weight: 900; letter-spacing: -0.05em; }
+    .brand-orange { color: #ea580c; }
+    .brand-bg-orange { background-color: #ea580c; }
+    .logo-img { height: 120px; width: auto; object-fit: contain; }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-900">
 
-    <div id="auth-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
-            <h2 class="text-2xl font-black mb-6 text-slate-800 italic uppercase">Staff Portal</h2>
-            <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none">
-            <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold">LOG IN</button>
+<body class="bg-gray-100 text-gray-900 p-4 font-sans">
+
+<div id="loginSection" class="max-w-md mx-auto bg-white shadow-2xl p-8 rounded-2xl mt-10 border border-gray-100">
+  <h2 class="text-3xl brand-italic uppercase mb-6 text-center">Staff Portal</h2>
+  <div class="space-y-4">
+    <input id="email" type="email" placeholder="Email" class="w-full border p-3 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-orange-500">
+    <input id="password" type="password" placeholder="Password" class="w-full border p-3 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-orange-500">
+    <button id="loginBtn" class="w-full brand-bg-orange text-white p-4 rounded-xl font-bold uppercase hover:bg-orange-700 transition">Login</button>
+  </div>
+</div>
+
+<div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-2xl p-6 md:p-12 rounded-2xl print-container">
+
+  <div class="flex justify-between items-center mb-8 pb-4 border-b screen-only">
+    <h2 class="text-xl brand-italic uppercase brand-orange">Dashboard</h2>
+    <button id="logoutBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold uppercase">Logout</button>
+  </div>
+
+  <div class="mb-10 screen-only">
+    <h3 class="brand-italic uppercase text-sm mb-3 text-gray-400">Recent Records</h3>
+    <div id="savedQuotes" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+  </div>
+
+  <div id="printableArea">
+    <div class="flex justify-between items-start border-b-4 border-gray-900 pb-8">
+      <img src="logo.png" class="logo-img">
+      <div class="text-right">
+        <h1 class="text-4xl brand-italic uppercase brand-orange leading-none">Brammeld</h1>
+        <h1 class="text-4xl brand-italic uppercase leading-none mb-4">Contracts</h1>
+        <div class="text-sm font-bold text-gray-600">
+            <p>brammeldcontracts@hotmail.com</p>
+            <p>07894013765</p>
+        </div>
+        <div class="mt-4">
+            <p id="printDocType" class="text-5xl brand-italic brand-orange uppercase italic"></p>
+            <p id="printDate" class="font-bold text-gray-500"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-10">
+        <div>
+            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1">Customer Details</label>
+            <input id="customerName" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
+            <p id="printCustomerName" class="print-only text-2xl font-black"></p>
+            
+            <textarea id="customerAddress" placeholder="Site Address" class="w-full border-none p-0 mt-1 focus:ring-0 text-gray-500 screen-only" rows="3"></textarea>
+            <p id="printCustomerAddress" class="print-only text-gray-500 whitespace-pre-line mt-1"></p>
+        </div>
+        <div class="screen-only space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Document Settings</label>
+            <select id="docType" class="w-full border p-3 rounded-xl bg-gray-50 font-bold">
+                <option value="Quote">QUOTE</option>
+                <option value="Invoice">INVOICE</option>
+            </select>
+            <input type="date" id="invoiceDate" class="w-full border p-3 rounded-xl bg-gray-50 font-bold">
         </div>
     </div>
 
-    <div id="app-content" class="max-w-4xl mx-auto p-4 md:p-8 bg-white shadow-2xl min-h-screen hidden">
-        <div id="document-to-print" class="bg-white">
-            <div class="flex justify-between items-center mb-10 border-b-2 border-slate-100 pb-8">
-                <img src="logo.png" alt="Logo" class="logo-main">
-                <div class="flex flex-col items-end">
-                    <div id="toggle-container" class="bg-slate-100 p-1 rounded-lg flex mb-4 no-print">
-                        <button id="toggle-quote" onclick="setDocType('QUOTE')" class="px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm">QUOTE</button>
-                        <button id="toggle-invoice" onclick="setDocType('INVOICE')" class="px-5 py-1.5 rounded-md text-sm font-bold">INVOICE</button>
-                    </div>
-                    <h1 id="doc-title" class="text-5xl font-black text-orange-600 uppercase italic tracking-tighter">QUOTE</h1>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <input type="text" id="cust-name" class="p-3 bg-slate-50 rounded-xl font-bold outline-none" placeholder="Customer Name">
-                <input type="date" id="doc-date" class="p-3 bg-slate-50 rounded-xl font-bold outline-none">
-                <textarea id="cust-address" rows="2" class="col-span-full p-3 bg-slate-50 rounded-xl outline-none" placeholder="Address"></textarea>
-            </div>
-            
-            <textarea id="job-desc" rows="4" class="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none" placeholder="Job Description..."></textarea>
-            
-            <table class="w-full text-left">
-                <thead class="bg-slate-800 text-white text-[10px] uppercase">
-                    <tr>
-                        <th class="p-4 w-1/2">Description</th>
-                        <th class="p-4 w-24 text-right">Rate</th>
-                        <th class="p-4 w-16 text-center">Qty</th>
-                        <th class="p-4 w-24 text-right">Total</th>
-                        <th id="th-action" class="no-print w-10"></th>
-                    </tr>
-                </thead>
-                <tbody id="line-items"></tbody>
-            </table>
-            
-            <div class="flex flex-col items-end mt-10 border-t-2 pt-6">
-                <div class="text-orange-600 font-black text-4xl italic">TOTAL: <span id="grand-total">£0.00</span></div>
-            </div>
-        </div>
+    <div class="mb-10">
+        <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Scope of Works</label>
+        <textarea id="jobDescription" placeholder="Description of the project..." class="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-orange-500 screen-only" rows="4"></textarea>
+        <div id="printJobDescription" class="print-only whitespace-pre-line text-lg leading-relaxed text-gray-800"></div>
+    </div>
 
-        <div class="no-print mt-6"><button onclick="addLineItem()" class="text-orange-600 font-black uppercase text-sm">+ Add Line Item</button></div>
+    <div class="mt-8">
+        <div class="grid grid-cols-12 gap-2 mb-2 px-4 text-[10px] font-black uppercase text-gray-400">
+            <div class="col-span-7">Description</div>
+            <div class="col-span-2 text-center">Qty</div>
+            <div class="col-span-2 text-right">Rate</div>
+            <div class="col-span-1"></div>
+        </div>
+        <div id="lineItems" class="space-y-2"></div>
         
-        <div class="grid grid-cols-2 gap-4 mt-10 no-print">
-            <button onclick="saveToCloud()" class="bg-slate-800 text-white py-5 rounded-xl font-bold">SAVE CLOUD</button>
-            <button onclick="downloadPDF()" class="bg-orange-600 text-white py-5 rounded-xl font-bold">DOWNLOAD PDF</button>
-        </div>
+        <button onclick="addItem()" class="mt-4 brand-orange font-black text-xs uppercase tracking-tighter screen-only">+ Add New Line Item</button>
+    </div>
 
-        <div class="mt-16 no-print border-t pt-10">
-            <h3 class="font-black uppercase italic mb-6">Recent Records</h3>
-            <div id="history-list" class="space-y-2"></div>
+    <div class="mt-12 flex flex-col items-end border-t-4 border-gray-900 pt-6">
+        <p id="paymentTerms" class="text-xs font-bold text-gray-400 uppercase mb-2"></p>
+        <div class="text-5xl brand-italic italic">
+            TOTAL: <span class="brand-orange">£</span><span id="totalAmount">0.00</span>
         </div>
     </div>
-    <script type="module" src="script.js"></script>
+
+    <div class="mt-10">
+        <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Notes</label>
+        <textarea id="notes" class="w-full p-4 border-none bg-gray-50 rounded-2xl italic screen-only" rows="2">Thank you for your business.</textarea>
+        <p id="printNotes" class="print-only italic text-gray-500"></p>
+    </div>
+
+    <div id="paymentDetails" class="mt-8 p-6 bg-gray-900 text-white rounded-2xl print-only">
+      <p class="text-orange-500 font-black uppercase text-xs tracking-widest mb-3">Bank Transfer Details</p>
+      <div class="grid grid-cols-2 gap-4 text-sm font-bold">
+          <div>
+              <p class="text-gray-400 uppercase text-[10px]">Account Name</p>
+              <p>BRAMMELD CONTRACTS</p>
+          </div>
+          <div>
+              <p class="text-gray-400 uppercase text-[10px]">Bank</p>
+              <p>Monzo</p>
+          </div>
+          <div>
+              <p class="text-gray-400 uppercase text-[10px]">Sort Code</p>
+              <p>04-00-03</p>
+          </div>
+          <div>
+              <p class="text-gray-400 uppercase text-[10px]">Account Number</p>
+              <p>14081712</p>
+          </div>
+      </div>
+    </div>
+
+    <div class="mt-10 flex gap-4 screen-only">
+      <button onclick="saveQuote()" class="flex-1 bg-gray-800 text-white p-4 rounded-xl font-bold uppercase transition hover:bg-black">Save to Cloud</button>
+      <button onclick="generatePDF()" class="flex-1 brand-bg-orange text-white p-4 rounded-xl font-bold uppercase transition hover:bg-orange-700">Download PDF</button>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>
