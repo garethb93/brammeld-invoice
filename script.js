@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
@@ -81,8 +81,8 @@ window.saveQuote = async function () {
   if (!name) return alert("Missing Customer Name");
   
   const items = [...document.getElementById("lineItems").children].map(row => ({
-    description: row.querySelector(".desc-in").value, // Key matched to DB screenshot
-    quantity: row.querySelector(".qty-in").value,    // Key matched to DB screenshot
+    description: row.querySelector(".desc-in").value,
+    quantity: row.querySelector(".qty-in").value,
     rate: row.querySelector(".rate-in").value
   }));
 
@@ -106,6 +106,18 @@ window.saveQuote = async function () {
   } catch(e) { alert("Save Failed"); }
 };
 
+window.deleteQuote = async function (id, e) {
+  e.stopPropagation(); // Prevents the record from loading when clicking delete
+  if (confirm("Are you sure you want to delete this record? This cannot be undone.")) {
+    try {
+      await deleteDoc(doc(db, "quotes", id));
+      loadQuotes();
+    } catch (error) {
+      alert("Error deleting record");
+    }
+  }
+};
+
 async function loadQuotes() {
   const container = document.getElementById("savedQuotes");
   if (!container) return;
@@ -117,10 +129,26 @@ async function loadQuotes() {
 
     snap.forEach(docSnap => {
       const d = docSnap.data();
-      const btn = document.createElement("button");
-      btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center";
+      const id = docSnap.id;
+      const btn = document.createElement("div");
+      btn.className = "group relative text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer";
       
-      btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p><p class="font-black">${d.customerName || 'Unnamed'}</p></div><p class="font-black">£${d.total || '0.00'}</p>`;
+      btn.innerHTML = `
+        <div class="flex-1">
+          <p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p>
+          <p class="font-black">${d.customerName || 'Unnamed'}</p>
+          <p class="text-xs text-gray-400 font-bold uppercase">${d.type || 'Quote'}</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <p class="font-black">£${d.total || '0.00'}</p>
+          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-100 text-red-500 p-2 rounded-lg transition-colors no-print">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5 v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+          </button>
+        </div>
+      `;
       
       btn.onclick = () => {
           document.getElementById("customerName").value = d.customerName || "";
@@ -133,7 +161,6 @@ async function loadQuotes() {
           document.getElementById("lineItems").innerHTML = "";
           if(d.items && Array.isArray(d.items)) {
             d.items.forEach(i => {
-                // Mapping DB keys (description/quantity) to the UI fields
                 addItem(i.description || "", i.quantity || 1, i.rate || 0);
             });
           } else {
