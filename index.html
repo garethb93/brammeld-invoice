@@ -24,9 +24,11 @@
         box-shadow: none !important;
       }
       
-      .no-print, button, .delete-btn { 
+      /* STRICT REMOVAL OF DELETE X AND BUTTONS FROM PDF */
+      .no-print, button, .delete-btn, [type="button"] { 
         display: none !important; 
         visibility: hidden !important; 
+        opacity: 0 !important;
       }
     }
 
@@ -45,15 +47,15 @@
   <div class="space-y-4">
     <input id="email" type="email" placeholder="Email" class="w-full border p-3 rounded-xl bg-gray-50 outline-none">
     <input id="password" type="password" placeholder="Password" class="w-full border p-3 rounded-xl bg-gray-50 outline-none">
-    <button id="loginBtn" class="w-full brand-bg-orange text-white p-4 rounded-xl font-bold uppercase">Login</button>
+    <button id="loginBtn" class="w-full brand-bg-orange text-white p-4 rounded-xl font-bold uppercase hover:opacity-90 transition">Login</button>
   </div>
 </div>
 
 <div id="appSection" class="hidden max-w-4xl mx-auto bg-white shadow-2xl p-6 md:p-12 rounded-2xl my-10 print-container">
 
   <div class="flex justify-between items-center mb-8 pb-4 border-b screen-only">
-    <h2 class="text-xl brand-italic uppercase brand-orange">Database</h2>
-    <button id="logoutBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold uppercase">Logout</button>
+    <h2 class="text-xl brand-italic uppercase brand-orange">Record Database</h2>
+    <button id="logoutBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold uppercase hover:bg-black transition">Logout</button>
   </div>
 
   <div class="mb-10 screen-only">
@@ -77,7 +79,9 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-8">
         <div>
             <label class="text-[10px] font-black uppercase text-gray-400 block mb-1">Bill To</label>
-            <input id="customerName" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
+            <input id="customerName" list="customerSuggestions" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
+            <datalist id="customerSuggestions"></datalist> 
+            
             <p id="printCustomerName" class="print-only text-2xl font-black"></p>
             
             <textarea id="customerAddress" placeholder="Site Address" class="w-full border-none p-0 mt-1 focus:ring-0 text-gray-500 screen-only" rows="2"></textarea>
@@ -130,8 +134,8 @@
     </div>
 
     <div class="mt-10 flex gap-4 screen-only">
-      <button onclick="saveQuote()" class="flex-1 bg-gray-800 text-white p-4 rounded-xl font-bold uppercase">Save Data</button>
-      <button onclick="generatePDF()" class="flex-1 brand-bg-orange text-white p-4 rounded-xl font-bold uppercase">Download PDF</button>
+      <button onclick="saveQuote()" class="flex-1 bg-gray-800 text-white p-4 rounded-xl font-bold uppercase hover:bg-black transition">Save to Cloud</button>
+      <button onclick="generatePDF()" class="flex-1 brand-bg-orange text-white p-4 rounded-xl font-bold uppercase hover:opacity-90 transition">Download PDF</button>
     </div>
   </div>
 </div>
