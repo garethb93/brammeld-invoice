@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
@@ -19,10 +19,17 @@ let currentUserId = null;
 let customerMemory = [];
 let currentInvoiceNum = "";
 
-// --- RANDOM INVOICE NUMBER GENERATOR ---
-window.generateInvoiceNumber = function() {
+// --- SEQUENTIAL INVOICE NUMBER GENERATOR ---
+window.generateInvoiceNumber = async function() {
     const d = new Date();
-    currentInvoiceNum = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear().toString().slice(-2)}-${Math.floor(Math.random()*90+10)}`;
+    const datePrefix = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear().toString().slice(-2)}`;
+    
+    // Check how many invoices exist for this exact prefix to get sequential number
+    const q = query(collection(db, "quotes"), where("invoiceNumber", ">=", datePrefix), where("invoiceNumber", "<=", datePrefix + "\uf8ff"));
+    const snap = await getDocs(q);
+    const count = snap.size + 1;
+    
+    currentInvoiceNum = `${datePrefix}-${count.toString().padStart(2, '0')}`;
     const display = document.getElementById('invoiceIDDisplay');
     if(display) display.innerText = `#${currentInvoiceNum}`;
 };
@@ -189,6 +196,4 @@ async function loadQuotes() {
   } catch (e) { console.error(e); }
 }
 
-// Start everything
 addItem();
-generateInvoiceNumber();
