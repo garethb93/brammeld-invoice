@@ -60,17 +60,17 @@ window.addItem = function(desc="", qty=1, rate=0) {
 
 function updateTotal() {
   let total = 0;
-  [...document.getElementById("lineItems").children].forEach(row => {
+  const rows = document.getElementById("lineItems").children;
+  for (let row of rows) {
     const q = row.querySelector(".qty-in").value || 0;
     const r = row.querySelector(".rate-in").value || 0;
     total += (parseFloat(q) * parseFloat(r));
-  });
+  }
   document.getElementById("totalAmount").innerText = total.toFixed(2);
 }
 
 window.generatePDF = function() {
   const type = document.getElementById("docType").value;
-  // Sync screen to print labels
   document.getElementById("printDocType").innerText = type.toUpperCase();
   document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
   document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
@@ -115,27 +115,38 @@ window.saveQuote = async function () {
 
 async function loadQuotes() {
   const container = document.getElementById("savedQuotes");
+  if (!container) return;
   container.innerHTML = "";
-  const q = query(collection(db, "quotes"), where("userId","==",currentUserId), orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
+  
+  try {
+    const q = query(collection(db, "quotes"), where("userId","==",currentUserId), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
 
-  snap.forEach(docSnap => {
-    const d = docSnap.data();
-    const btn = document.createElement("button");
-    btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center";
-    btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.invoiceID || 'Record'}</p><p class="font-black">${d.customerName}</p></div><p class="font-black">£${d.total}</p>`;
-    btn.onclick = () => {
-        document.getElementById("customerName").value = d.customerName;
-        document.getElementById("customerAddress").value = d.customerAddress;
-        document.getElementById("jobDescription").value = d.jobDescription;
-        document.getElementById("docType").value = d.type || "Quote";
-        currentInvoiceID = d.invoiceID || "N/A";
-        document.getElementById("invoiceIDDisplay").innerText = `#${currentInvoiceID}`;
-        document.getElementById("lineItems").innerHTML = "";
-        if(d.items) d.items.forEach(i => addItem(i.desc, i.qty, i.rate));
-    };
-    container.appendChild(btn);
-  });
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+      const btn = document.createElement("button");
+      btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center";
+      btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.invoiceID || 'Record'}</p><p class="font-black">${d.customerName}</p></div><p class="font-black">£${d.total}</p>`;
+      
+      btn.onclick = () => {
+          document.getElementById("customerName").value = d.customerName || "";
+          document.getElementById("customerAddress").value = d.customerAddress || "";
+          document.getElementById("jobDescription").value = d.jobDescription || "";
+          document.getElementById("docType").value = d.type || "Quote";
+          currentInvoiceID = d.invoiceID || "N/A";
+          document.getElementById("invoiceIDDisplay").innerText = `#${currentInvoiceID}`;
+          document.getElementById("lineItems").innerHTML = "";
+          if(d.items) {
+            d.items.forEach(i => addItem(i.desc, i.qty, i.rate));
+          } else {
+            addItem();
+          }
+      };
+      container.appendChild(btn);
+    });
+  } catch (e) {
+    console.error("Error loading quotes: ", e);
+  }
 }
 
 addItem();
