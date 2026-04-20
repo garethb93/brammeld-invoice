@@ -24,7 +24,6 @@
         box-shadow: none !important;
       }
       
-      /* REMOVE ALL BUTTONS AND DELETE X FROM PDF */
       .no-print, button, .delete-btn, [type="button"], .group button { 
         display: none !important; 
         visibility: hidden !important; 
@@ -37,8 +36,6 @@
     .brand-orange { color: #ea580c; }
     .brand-bg-orange { background-color: #ea580c; }
     .logo-img { height: 180px; width: auto; object-fit: contain; }
-    
-    /* Custom Scrollbar for Database */
     #savedQuotes { max-height: 400px; overflow-y: auto; }
   </style>
 </head>
@@ -84,7 +81,6 @@
             <label class="text-[10px] font-black uppercase text-gray-400 block mb-1">Bill To</label>
             <input id="customerName" list="customerSuggestions" autocomplete="off" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
             <datalist id="customerSuggestions"></datalist> 
-            
             <p id="printCustomerName" class="print-only text-2xl font-black"></p>
             
             <textarea id="customerAddress" placeholder="Site Address" class="w-full border-none p-0 mt-1 focus:ring-0 text-gray-500 screen-only" rows="2"></textarea>
