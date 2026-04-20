@@ -18,7 +18,6 @@ const db = getFirestore(app);
 let currentUserId = null;
 let currentInvoiceID = "";
 
-// Generate random invoice ID: BRAM-4 Digit Random
 function generateID() {
     const random = Math.floor(1000 + Math.random() * 9000);
     currentInvoiceID = `BRAM-${random}`;
@@ -49,7 +48,7 @@ window.addItem = function(desc="", qty=1, rate=0) {
     <div class="col-span-8"><input class="w-full bg-transparent p-1 font-bold outline-none desc-in" value="${desc}" placeholder="Description"></div>
     <div class="col-span-1 text-center"><input type="number" class="w-full bg-transparent p-1 text-center font-bold outline-none qty-in" value="${qty}"></div>
     <div class="col-span-2 text-right"><input type="number" class="w-full bg-transparent p-1 text-right font-bold outline-none rate-in" value="${rate}"></div>
-    <div class="col-span-1 text-right no-print"><button class="text-red-400 font-bold hover:text-red-600 no-print">×</button></div>
+    <div class="col-span-1 text-right no-print"><button class="text-red-400 font-bold hover:text-red-600 no-print" type="button">×</button></div>
   `;
   document.getElementById("lineItems").appendChild(row);
   row.querySelector("button").onclick = () => { row.remove(); updateTotal(); };
@@ -60,8 +59,8 @@ window.addItem = function(desc="", qty=1, rate=0) {
 function updateTotal() {
   let total = 0;
   [...document.getElementById("lineItems").children].forEach(row => {
-    const q = row.querySelector(".qty-in").value;
-    const r = row.querySelector(".rate-in").value;
+    const q = row.querySelector(".qty-in").value || 0;
+    const r = row.querySelector(".rate-in").value || 0;
     total += (parseFloat(q) * parseFloat(r));
   });
   document.getElementById("totalAmount").innerText = total.toFixed(2);
@@ -69,7 +68,6 @@ function updateTotal() {
 
 window.generatePDF = function() {
   const type = document.getElementById("docType").value;
-  // Sync Data
   document.getElementById("printDocType").innerText = type.toUpperCase();
   document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
   document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
