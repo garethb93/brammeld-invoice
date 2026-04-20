@@ -121,10 +121,10 @@ window.deleteQuote = async function (id, e) {
 async function loadQuotes() {
   const container = document.getElementById("savedQuotes");
   const suggestionList = document.getElementById("customerSuggestions");
-  if (!container) return;
+  if (!container || !suggestionList) return;
   
   container.innerHTML = "";
-  if (suggestionList) suggestionList.innerHTML = "";
+  suggestionList.innerHTML = ""; 
   const uniqueNames = new Set();
 
   try {
@@ -135,8 +135,8 @@ async function loadQuotes() {
       const d = docSnap.data();
       const id = docSnap.id;
 
-      // Autocomplete logic
-      if (d.customerName && !uniqueNames.has(d.customerName)) {
+      // Autocomplete memory logic
+      if (d.customerName && d.customerName.trim() !== "" && !uniqueNames.has(d.customerName)) {
         uniqueNames.add(d.customerName);
         const opt = document.createElement("option");
         opt.value = d.customerName;
@@ -149,13 +149,13 @@ async function loadQuotes() {
       btn.innerHTML = `
         <div class="flex-1">
           <p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p>
-          <p class="font-black">${d.customerName || 'Unnamed'}</p>
-          <p class="text-xs text-gray-400 font-bold uppercase">${d.type || 'Quote'}</p>
+          <p class="font-black text-sm">${d.customerName || 'Unnamed'}</p>
+          <p class="text-[10px] text-gray-400 font-bold uppercase">${d.type || 'Quote'}</p>
         </div>
-        <div class="flex items-center gap-4">
-          <p class="font-black text-lg">£${d.total || '0.00'}</p>
-          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-500 hover:text-white text-red-500 p-2 rounded-lg transition no-print">
-            Delete
+        <div class="flex items-center gap-3">
+          <p class="font-black text-sm">£${d.total || '0.00'}</p>
+          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-500 hover:text-white text-red-500 px-3 py-1 text-[10px] rounded font-black transition no-print">
+            DELETE
           </button>
         </div>
       `;
