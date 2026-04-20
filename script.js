@@ -36,7 +36,9 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.getElementById("loginBtn").onclick = async () => {
-  try { await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value); } catch (e) { alert("Login failed"); }
+  try {
+    await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value);
+  } catch (e) { alert("Login Error"); }
 };
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
@@ -48,7 +50,7 @@ window.addItem = function(desc="", qty=1, rate=0) {
     <div class="col-span-8"><input class="w-full bg-transparent p-1 font-bold outline-none desc-in" value="${desc}" placeholder="Description"></div>
     <div class="col-span-1 text-center"><input type="number" class="w-full bg-transparent p-1 text-center font-bold outline-none qty-in" value="${qty}"></div>
     <div class="col-span-2 text-right"><input type="number" class="w-full bg-transparent p-1 text-right font-bold outline-none rate-in" value="${rate}"></div>
-    <div class="col-span-1 text-right no-print"><button class="text-red-400 font-bold hover:text-red-600 no-print" type="button">×</button></div>
+    <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold delete-btn no-print" type="button">×</button></div>
   `;
   document.getElementById("lineItems").appendChild(row);
   row.querySelector("button").onclick = () => { row.remove(); updateTotal(); };
@@ -68,6 +70,7 @@ function updateTotal() {
 
 window.generatePDF = function() {
   const type = document.getElementById("docType").value;
+  // Sync screen to print labels
   document.getElementById("printDocType").innerText = type.toUpperCase();
   document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
   document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
@@ -83,7 +86,8 @@ window.generatePDF = function() {
 
 window.saveQuote = async function () {
   const name = document.getElementById("customerName").value;
-  if (!name) return alert("Enter Customer Name");
+  if (!name) return alert("Missing Customer Name");
+  
   const items = [...document.getElementById("lineItems").children].map(row => ({
     desc: row.querySelector(".desc-in").value,
     qty: row.querySelector(".qty-in").value,
@@ -104,9 +108,9 @@ window.saveQuote = async function () {
 
   try {
     await addDoc(collection(db, "quotes"), data);
-    alert("Saved Successfully");
+    alert("Record Cloud Saved");
     loadQuotes();
-  } catch(e) { alert("Error saving"); }
+  } catch(e) { alert("Save Failed"); }
 };
 
 async function loadQuotes() {
@@ -118,7 +122,7 @@ async function loadQuotes() {
   snap.forEach(docSnap => {
     const d = docSnap.data();
     const btn = document.createElement("button");
-    btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 transition shadow-sm flex justify-between items-center";
+    btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center";
     btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.invoiceID || 'Record'}</p><p class="font-black">${d.customerName}</p></div><p class="font-black">£${d.total}</p>`;
     btn.onclick = () => {
         document.getElementById("customerName").value = d.customerName;
@@ -128,7 +132,7 @@ async function loadQuotes() {
         currentInvoiceID = d.invoiceID || "N/A";
         document.getElementById("invoiceIDDisplay").innerText = `#${currentInvoiceID}`;
         document.getElementById("lineItems").innerHTML = "";
-        d.items.forEach(i => addItem(i.desc, i.qty, i.rate));
+        if(d.items) d.items.forEach(i => addItem(i.desc, i.qty, i.rate));
     };
     container.appendChild(btn);
   });
