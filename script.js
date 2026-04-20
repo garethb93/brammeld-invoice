@@ -69,27 +69,23 @@ window.generatePDF = function() {
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
   document.getElementById("printJobDescription").innerText = document.getElementById("jobDescription").value;
   document.getElementById("printNotes").innerText = document.getElementById("notes").value;
-  
   document.getElementById("paymentTerms").innerText = (type === "Invoice") ? "PAYMENT DUE WITHIN 30 DAYS" : "";
   document.getElementById("paymentDetails").style.display = (type === "Invoice") ? "block" : "none";
-
   window.print();
 };
 
 window.saveQuote = async function () {
   const name = document.getElementById("customerName").value;
   if (!name) return alert("Missing Customer Name");
-  
   const items = [...document.getElementById("lineItems").children].map(row => ({
     description: row.querySelector(".desc-in").value,
     quantity: row.querySelector(".qty-in").value,
     rate: row.querySelector(".rate-in").value
   }));
-
   const data = {
     userId: currentUserId,
     customerName: name,
-    customerAddress: document.getElementById("customerAddress").value,
+    address: document.getElementById("customerAddress").value, // Key matched to screenshot
     jobDescription: document.getElementById("jobDescription").value,
     notes: document.getElementById("notes").value,
     total: document.getElementById("totalAmount").innerText,
@@ -98,7 +94,6 @@ window.saveQuote = async function () {
     date: document.getElementById("invoiceDate").value,
     createdAt: serverTimestamp()
   };
-
   try {
     await addDoc(collection(db, "quotes"), data);
     alert("Record Saved Successfully");
@@ -108,13 +103,11 @@ window.saveQuote = async function () {
 
 window.deleteQuote = async function (id, e) {
   e.stopPropagation(); 
-  if (confirm("Are you sure you want to delete this record? This cannot be undone.")) {
+  if (confirm("Are you sure you want to delete this record?")) {
     try {
       await deleteDoc(doc(db, "quotes", id));
       loadQuotes();
-    } catch (error) {
-      alert("Error deleting record");
-    }
+    } catch (error) { alert("Error deleting record"); }
   }
 };
 
@@ -122,28 +115,21 @@ async function loadQuotes() {
   const container = document.getElementById("savedQuotes");
   const suggestionList = document.getElementById("customerSuggestions");
   if (!container || !suggestionList) return;
-  
   container.innerHTML = "";
   suggestionList.innerHTML = ""; 
   const uniqueNames = new Set();
-
   try {
     const q = query(collection(db, "quotes"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
-
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const id = docSnap.id;
-
-      // Autocomplete memory logic
       if (d.customerName && d.customerName.trim() !== "" && !uniqueNames.has(d.customerName)) {
         uniqueNames.add(d.customerName);
         const opt = document.createElement("option");
         opt.value = d.customerName;
         suggestionList.appendChild(opt);
       }
-
-      // Record Card UI
       const btn = document.createElement("div");
       btn.className = "group relative text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer mb-2 transition";
       btn.innerHTML = `
@@ -154,25 +140,19 @@ async function loadQuotes() {
         </div>
         <div class="flex items-center gap-3">
           <p class="font-black text-sm">£${d.total || '0.00'}</p>
-          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-500 hover:text-white text-red-500 px-3 py-1 text-[10px] rounded font-black transition no-print">
-            DELETE
-          </button>
+          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-500 hover:text-white text-red-500 px-3 py-1 text-[10px] rounded font-black transition no-print">DELETE</button>
         </div>
       `;
-      
       btn.onclick = () => {
           document.getElementById("customerName").value = d.customerName || "";
-          document.getElementById("customerAddress").value = d.customerAddress || "";
+          document.getElementById("customerAddress").value = d.address || ""; // Pulling correct field
           document.getElementById("jobDescription").value = d.jobDescription || "";
           document.getElementById("notes").value = d.notes || "Thank you for your business.";
           document.getElementById("docType").value = d.type || "Quote";
           document.getElementById("invoiceDate").value = d.date || "";
-          
           document.getElementById("lineItems").innerHTML = "";
           if(d.items && Array.isArray(d.items)) {
-            d.items.forEach(i => {
-                addItem(i.description || "", i.quantity || 1, i.rate || 0);
-            });
+            d.items.forEach(i => addItem(i.description || "", i.quantity || 1, i.rate || 0));
           } else { addItem(); }
           window.scrollTo({ top: 0, behavior: 'smooth' });
       };
@@ -180,5 +160,4 @@ async function loadQuotes() {
     });
   } catch (e) { console.error(e); }
 }
-
 addItem();
