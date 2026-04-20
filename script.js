@@ -16,13 +16,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentUserId = null;
-let currentInvoiceID = "";
-
-function generateID() {
-    const random = Math.floor(1000 + Math.random() * 9000);
-    currentInvoiceID = `BRAM-${random}`;
-    document.getElementById("invoiceIDDisplay").innerText = `#${currentInvoiceID}`;
-}
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -30,7 +23,6 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("appSection").classList.remove("hidden");
     document.getElementById("invoiceDate").valueAsDate = new Date();
-    generateID();
     loadQuotes();
   }
 });
@@ -102,7 +94,7 @@ window.saveQuote = async function () {
     total: document.getElementById("totalAmount").innerText,
     items: items,
     type: document.getElementById("docType").value,
-    date: document.getElementById("invoiceDate").value, // Matches your DB screenshot
+    date: document.getElementById("invoiceDate").value,
     createdAt: serverTimestamp()
   };
 
@@ -119,7 +111,6 @@ async function loadQuotes() {
   container.innerHTML = "";
   
   try {
-    // Pointing exactly to the "quotes" collection seen in your screenshot
     const q = query(collection(db, "quotes"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
 
@@ -128,7 +119,7 @@ async function loadQuotes() {
       const btn = document.createElement("button");
       btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center";
       
-      // Using 'date' as the ID label to match your existing data
+      // Pointing to 'date' and 'customerName' to match your Firestore screenshot
       btn.innerHTML = `<div><p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p><p class="font-black">${d.customerName || 'Unnamed'}</p></div><p class="font-black">£${d.total || '0.00'}</p>`;
       
       btn.onclick = () => {
