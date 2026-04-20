@@ -24,8 +24,8 @@
         box-shadow: none !important;
       }
       
-      /* STRICT REMOVAL OF DELETE X AND BUTTONS FROM PDF */
-      .no-print, button, .delete-btn, [type="button"] { 
+      /* REMOVE ALL BUTTONS AND DELETE X FROM PDF */
+      .no-print, button, .delete-btn, [type="button"], .group button { 
         display: none !important; 
         visibility: hidden !important; 
         opacity: 0 !important;
@@ -37,6 +37,9 @@
     .brand-orange { color: #ea580c; }
     .brand-bg-orange { background-color: #ea580c; }
     .logo-img { height: 180px; width: auto; object-fit: contain; }
+    
+    /* Custom Scrollbar for Database */
+    #savedQuotes { max-height: 400px; overflow-y: auto; }
   </style>
 </head>
 
@@ -59,7 +62,7 @@
   </div>
 
   <div class="mb-10 screen-only">
-    <div id="savedQuotes" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+    <div id="savedQuotes" class="grid grid-cols-1 md:grid-cols-2 gap-2 pr-2"></div>
   </div>
 
   <div id="printableArea">
@@ -79,7 +82,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-8">
         <div>
             <label class="text-[10px] font-black uppercase text-gray-400 block mb-1">Bill To</label>
-            <input id="customerName" list="customerSuggestions" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
+            <input id="customerName" list="customerSuggestions" autocomplete="off" placeholder="Client Name" class="w-full text-2xl font-black border-none p-0 focus:ring-0 screen-only">
             <datalist id="customerSuggestions"></datalist> 
             
             <p id="printCustomerName" class="print-only text-2xl font-black"></p>
