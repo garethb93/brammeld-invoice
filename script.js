@@ -19,7 +19,7 @@ let currentUserId = null;
 let customerMemory = [];
 let currentInvoiceNum = "";
 
-// --- AUTO RANDOM INVOICE NUMBER GENERATOR ---
+// --- RANDOM INVOICE NUMBER GENERATOR ---
 window.generateInvoiceNumber = function() {
     const d = new Date();
     const datePart = `${d.getDate().toString().padStart(2,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getFullYear().toString().slice(-2)}`;
@@ -37,14 +37,20 @@ onAuthStateChanged(auth, (user) => {
     document.getElementById("invoiceDate").valueAsDate = new Date();
     loadQuotes();
     generateInvoiceNumber(); 
+  } else {
+    document.getElementById("loginSection").classList.remove("hidden");
+    document.getElementById("appSection").classList.add("hidden");
   }
 });
 
 document.getElementById("loginBtn").onclick = async () => {
   const email = document.getElementById("email").value;
   const pass = document.getElementById("password").value;
-  try { await signInWithEmailAndPassword(auth, email, pass); } 
-  catch (e) { alert("Login Error: " + e.message); }
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    alert("Login Error: " + e.message);
+  }
 };
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
@@ -80,17 +86,18 @@ window.addItem = function(desc="", qty=1, rate=0) {
     <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold" type="button" onclick="this.parentElement.parentElement.remove(); window.updateTotal();">×</button></div>
   `;
   document.getElementById("lineItems").appendChild(row);
-  row.querySelectorAll("input").forEach(i => i.oninput = updateTotal);
-  updateTotal();
+  row.querySelectorAll("input").forEach(i => i.oninput = window.updateTotal);
+  window.updateTotal();
 };
 
 window.updateTotal = function() {
   let total = 0;
-  [...document.getElementById("lineItems").children].forEach(row => {
+  const items = document.getElementById("lineItems").children;
+  for (let row of items) {
     const q = row.querySelector(".qty-in").value || 0;
     const r = row.querySelector(".rate-in").value || 0;
     total += (parseFloat(q) * parseFloat(r));
-  });
+  }
   document.getElementById("totalAmount").innerText = total.toFixed(2);
 };
 
@@ -102,8 +109,7 @@ window.generatePDF = function() {
   document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
   document.getElementById("printJobDescription").innerText = document.getElementById("jobDescription").value;
   document.getElementById("printNotes").innerText = document.getElementById("notes").value;
-  // Ensure the PDF ID matches the current state
-  document.getElementById('invoiceIDDisplay').innerText = `#${currentInvoiceNum}`;
+  document.getElementById("invoiceIDDisplay").innerText = `#${currentInvoiceNum}`;
   document.getElementById("paymentTerms").innerText = (type === "Invoice") ? "PAYMENT DUE WITHIN 30 DAYS" : "";
   document.getElementById("paymentDetails").style.display = (type === "Invoice") ? "block" : "none";
   window.print();
@@ -133,7 +139,7 @@ window.saveQuote = async function () {
   try {
     await addDoc(collection(db, "quotes"), data);
     alert("Record Saved Successfully");
-    generateInvoiceNumber(); 
+    window.generateInvoiceNumber(); 
     loadQuotes();
   } catch(e) { alert("Save Failed: " + e.message); }
 };
@@ -195,4 +201,4 @@ async function loadQuotes() {
 }
 
 addItem();
-generateInvoiceNumber();
+window.generateInvoiceNumber();
