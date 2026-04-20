@@ -28,9 +28,8 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.getElementById("loginBtn").onclick = async () => {
-  try {
-    await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value);
-  } catch (e) { alert("Login Error"); }
+  try { await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value); } 
+  catch (e) { alert("Login Error"); }
 };
 
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
@@ -42,7 +41,7 @@ window.addItem = function(desc="", qty=1, rate=0) {
     <div class="col-span-8"><input class="w-full bg-transparent p-1 font-bold outline-none desc-in" value="${desc}" placeholder="Description"></div>
     <div class="col-span-1 text-center"><input type="number" class="w-full bg-transparent p-1 text-center font-bold outline-none qty-in" value="${qty}"></div>
     <div class="col-span-2 text-right"><input type="number" class="w-full bg-transparent p-1 text-right font-bold outline-none rate-in" value="${rate}"></div>
-    <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold delete-btn no-print" type="button">×</button></div>
+    <div class="col-span-1 text-right no-print"><button class="text-red-500 font-bold delete-btn" type="button">×</button></div>
   `;
   document.getElementById("lineItems").appendChild(row);
   row.querySelector("button").onclick = () => { row.remove(); updateTotal(); };
@@ -52,12 +51,11 @@ window.addItem = function(desc="", qty=1, rate=0) {
 
 function updateTotal() {
   let total = 0;
-  const rows = document.getElementById("lineItems").children;
-  for (let row of rows) {
+  [...document.getElementById("lineItems").children].forEach(row => {
     const q = row.querySelector(".qty-in").value || 0;
     const r = row.querySelector(".rate-in").value || 0;
     total += (parseFloat(q) * parseFloat(r));
-  }
+  });
   document.getElementById("totalAmount").innerText = total.toFixed(2);
 }
 
@@ -85,7 +83,7 @@ window.saveQuote = async function () {
   const data = {
     userId: currentUserId,
     customerName: name,
-    address: document.getElementById("customerAddress").value, // Key matched to screenshot
+    address: document.getElementById("customerAddress").value,
     jobDescription: document.getElementById("jobDescription").value,
     notes: document.getElementById("notes").value,
     total: document.getElementById("totalAmount").innerText,
@@ -104,10 +102,8 @@ window.saveQuote = async function () {
 window.deleteQuote = async function (id, e) {
   e.stopPropagation(); 
   if (confirm("Are you sure you want to delete this record?")) {
-    try {
-      await deleteDoc(doc(db, "quotes", id));
-      loadQuotes();
-    } catch (error) { alert("Error deleting record"); }
+    try { await deleteDoc(doc(db, "quotes", id)); loadQuotes(); } 
+    catch (error) { alert("Error deleting record"); }
   }
 };
 
@@ -124,14 +120,15 @@ async function loadQuotes() {
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const id = docSnap.id;
-      if (d.customerName && d.customerName.trim() !== "" && !uniqueNames.has(d.customerName)) {
+      // Memory/Suggestion Logic
+      if (d.customerName && !uniqueNames.has(d.customerName)) {
         uniqueNames.add(d.customerName);
         const opt = document.createElement("option");
         opt.value = d.customerName;
         suggestionList.appendChild(opt);
       }
       const btn = document.createElement("div");
-      btn.className = "group relative text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer mb-2 transition";
+      btn.className = "group text-left p-4 bg-white border rounded-xl hover:border-orange-500 shadow-sm flex justify-between items-center cursor-pointer mb-2 transition";
       btn.innerHTML = `
         <div class="flex-1">
           <p class="text-[10px] font-black brand-orange uppercase">${d.date || 'No Date'}</p>
@@ -140,20 +137,19 @@ async function loadQuotes() {
         </div>
         <div class="flex items-center gap-3">
           <p class="font-black text-sm">£${d.total || '0.00'}</p>
-          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-500 hover:text-white text-red-500 px-3 py-1 text-[10px] rounded font-black transition no-print">DELETE</button>
+          <button onclick="deleteQuote('${id}', event)" class="bg-gray-100 hover:bg-red-500 hover:text-white text-red-500 px-3 py-1 text-[10px] rounded font-black no-print">DELETE</button>
         </div>
       `;
       btn.onclick = () => {
           document.getElementById("customerName").value = d.customerName || "";
-          document.getElementById("customerAddress").value = d.address || ""; // Pulling correct field
+          document.getElementById("customerAddress").value = d.address || ""; 
           document.getElementById("jobDescription").value = d.jobDescription || "";
-          document.getElementById("notes").value = d.notes || "Thank you for your business.";
+          document.getElementById("notes").value = d.notes || "";
           document.getElementById("docType").value = d.type || "Quote";
           document.getElementById("invoiceDate").value = d.date || "";
           document.getElementById("lineItems").innerHTML = "";
-          if(d.items && Array.isArray(d.items)) {
-            d.items.forEach(i => addItem(i.description || "", i.quantity || 1, i.rate || 0));
-          } else { addItem(); }
+          if(d.items) d.items.forEach(i => addItem(i.description, i.quantity, i.rate));
+          else addItem();
           window.scrollTo({ top: 0, behavior: 'smooth' });
       };
       container.appendChild(btn);
