@@ -8,28 +8,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* PDF FIXES: Triggered during export */
-        .force-pdf-layout { 
-            width: 750px !important; 
-            padding: 30px !important; 
-            margin: 0 !important;
+        /* PDF PRINT STYLES - Forced during generation */
+        .pdf-capture-container {
+            width: 700px !important; /* FIXED WIDTH - STOP THE SHIFT */
+            padding: 40px !important;
             background: white !important;
+            margin: 0 !important;
         }
         
-        .force-pdf-layout .no-print { display: none !important; }
+        .pdf-capture-container .no-print { display: none !important; }
         
-        /* Stop the right-side shift by forcing table layout */
-        .force-pdf-layout table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; }
-        .force-pdf-layout th { border-bottom: 2px solid #334155 !important; padding: 10px 5px !important; }
-        .force-pdf-layout td { 
-            display: table-cell !important; 
-            padding: 10px 5px !important; 
+        .pdf-capture-container table { 
+            width: 100% !important; 
+            border-collapse: collapse !important; 
+            table-layout: fixed !important;
+        }
+
+        .pdf-capture-container td, .pdf-capture-container th {
+            padding: 12px 8px !important;
             border-bottom: 1px solid #f1f5f9 !important;
-            word-wrap: break-word !important;
+            font-size: 14px !important;
         }
 
         .logo-main { height: 140px; width: auto; object-fit: contain; }
-        .pdf-replacement-text { white-space: pre-wrap; font-family: sans-serif; color: #1e293b; }
+        .replacement-text { white-space: pre-wrap; color: #1e293b; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-900">
@@ -40,7 +42,6 @@
             <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3 outline-none">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4 outline-none">
             <button onclick="handleLogin()" class="bg-orange-600 text-white w-full py-3 rounded-lg font-bold">LOG IN</button>
-            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Error: Invalid Login.</p>
         </div>
     </div>
 
@@ -69,10 +70,10 @@
                 <thead class="bg-slate-800 text-white text-[10px] uppercase">
                     <tr>
                         <th class="p-4 w-1/2">Description</th>
-                        <th class="p-4 w-24">Rate</th>
+                        <th class="p-4 w-24 text-right">Rate</th>
                         <th class="p-4 w-16 text-center">Qty</th>
                         <th class="p-4 w-24 text-right">Total</th>
-                        <th id="th-action" class="no-print"></th>
+                        <th id="th-action" class="no-print w-10"></th>
                     </tr>
                 </thead>
                 <tbody id="line-items"></tbody>
@@ -92,11 +93,7 @@
 
         <div class="mt-16 no-print border-t pt-10">
             <h3 class="font-black uppercase italic mb-6">Recent Records</h3>
-            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg">
-                <table class="w-full text-sm">
-                    <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
+            <div id="history-list" class="space-y-2"></div>
         </div>
     </div>
     <script type="module" src="script.js"></script>
