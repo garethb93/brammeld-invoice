@@ -1,163 +1,143 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, serverTimestamp, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
-    authDomain: "brammeld-invoice-a804f.firebaseapp.com",
-    projectId: "brammeld-invoice-a804f",
-    storageBucket: "brammeld-invoice-a804f.firebasestorage.app",
-    messagingSenderId: "533156932511",
-    appId: "1:533156932511:web:8fadd6e0d7a70e32bbabaa"
+  apiKey: "AIzaSyCzBuns8nHGN0sNjuTY5RIDZ85aUGx-THA",
+  authDomain: "brammeld-invoice-a804f.firebaseapp.com",
+  projectId: "brammeld-invoice-a804f",
+  storageBucket: "brammeld-invoice-a804f.firebasestorage.app",
+  messagingSenderId: "533156932511",
+  appId: "1:533156932511:web:8fadd6e0d7a70e32bbabaa"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-let currentDocType = 'QUOTE', currentUser = null;
 
-window.handleLogin = async () => {
-    const e = document.getElementById('email').value, p = document.getElementById('password').value;
-    try { await signInWithEmailAndPassword(auth, e, p); } catch (err) { alert("Login Error"); }
-};
+let currentUserId = null;
+const quotesUl = document.getElementById("savedQuotes");
+const lineItemsContainer = document.getElementById("lineItems");
 
 onAuthStateChanged(auth, (user) => {
-    if (user) { 
-        currentUser = user; 
-        document.getElementById('auth-overlay').classList.add('hidden'); 
-        document.getElementById('app-content').classList.remove('hidden'); 
-        initApp(); 
-    }
+  if (user) {
+    currentUserId = user.uid;
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("appSection").classList.remove("hidden");
+    document.getElementById("invoiceDate").valueAsDate = new Date();
+    loadQuotes();
+  }
 });
 
-function initApp() { 
-    document.getElementById('doc-date').valueAsDate = new Date(); 
-    loadHistory(); 
-    addLineItem(); 
-}
-
-window.setDocType = (type) => {
-    currentDocType = type;
-    document.getElementById('doc-title').innerText = type;
-    document.getElementById('toggle-quote').className = type === 'QUOTE' ? 'px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-5 py-1.5 rounded-md text-sm font-bold';
-    document.getElementById('toggle-invoice').className = type === 'INVOICE' ? 'px-5 py-1.5 rounded-md text-sm font-bold bg-white shadow-sm' : 'px-5 py-1.5 rounded-md text-sm font-bold';
+document.getElementById("loginBtn").onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value);
+  } catch (e) { alert("Login failed"); }
 };
 
-window.addLineItem = (desc = '', rate = '0', qty = '1') => {
-    const tbody = document.getElementById('line-items');
-    const row = document.createElement('tr');
-    row.className = "cost-row border-b border-slate-50";
-    row.innerHTML = `
-        <td class="p-3"><textarea class="w-full bg-transparent outline-none item-desc resize-none" rows="1">${desc}</textarea></td>
-        <td class="p-3"><input type="number" class="w-full bg-transparent text-right item-cost" value="${rate}" oninput="calculateTotals()"></td>
-        <td class="p-3"><input type="number" class="w-full bg-transparent text-center item-qty" value="${qty}" oninput="calculateTotals()"></td>
-        <td class="p-3 font-black text-right line-total">£0.00</td>
-        <td class="p-3 no-print action-cell text-center"><button onclick="this.closest('tr').remove(); calculateTotals();" class="text-red-500 font-bold">×</button></td>
+document.getElementById("logoutBtn").onclick = () => signOut(auth);
+
+window.addItem = function(desc="", qty=1, rate=0) {
+  const row = document.createElement("div");
+  row.className = "grid grid-cols-12 gap-2 items-center bg-gray-50 p-2 rounded-xl border border-transparent hover:border-orange-200 transition mb-2";
+  row.innerHTML = `
+    <div class="col-span-7"><input class="w-full bg-transparent p-2 font-bold outline-none desc-in" value="${desc}" placeholder="Description"></div>
+    <div class="col-span-2"><input type="number" class="w-full bg-transparent p-2 text-center font-bold outline-none qty-in" value="${qty}"></div>
+    <div class="col-span-2"><input type="number" class="w-full bg-transparent p-2 text-right font-bold outline-none rate-in" value="${rate}"></div>
+    <div class="col-span-1 text-right"><button class="text-red-400 font-bold hover:text-red-600">×</button></div>
+  `;
+  lineItemsContainer.appendChild(row);
+  row.querySelector("button").onclick = () => { row.remove(); updateTotal(); };
+  row.querySelectorAll("input").forEach(i => i.oninput = updateTotal);
+  updateTotal();
+};
+
+function updateTotal() {
+  let total = 0;
+  [...lineItemsContainer.children].forEach(row => {
+    const q = row.querySelector(".qty-in").value;
+    const r = row.querySelector(".rate-in").value;
+    total += (parseFloat(q) * parseFloat(r));
+  });
+  document.getElementById("totalAmount").innerText = total.toFixed(2);
+}
+
+window.generatePDF = function() {
+  const type = document.getElementById("docType").value;
+  // Sync screen inputs to print fields
+  document.getElementById("printDocType").innerText = type.toUpperCase();
+  document.getElementById("printDate").innerText = document.getElementById("invoiceDate").value;
+  document.getElementById("printCustomerName").innerText = document.getElementById("customerName").value;
+  document.getElementById("printCustomerAddress").innerText = document.getElementById("customerAddress").value;
+  document.getElementById("printJobDescription").innerText = document.getElementById("jobDescription").value;
+  document.getElementById("printNotes").innerText = document.getElementById("notes").value;
+  
+  if (type === "Invoice") {
+    document.getElementById("paymentTerms").innerText = "PAYMENT DUE WITHIN 30 DAYS";
+    document.getElementById("paymentDetails").style.display = "block";
+  } else {
+    document.getElementById("paymentTerms").innerText = "";
+    document.getElementById("paymentDetails").style.display = "none";
+  }
+
+  window.print();
+};
+
+window.saveQuote = async function () {
+  const name = document.getElementById("customerName").value;
+  if (!name) return alert("Enter Customer Name");
+  
+  const items = [...lineItemsContainer.children].map(row => ({
+    desc: row.querySelector(".desc-in").value,
+    qty: row.querySelector(".qty-in").value,
+    rate: row.querySelector(".rate-in").value
+  }));
+
+  const data = {
+    userId: currentUserId,
+    customerName: name,
+    customerAddress: document.getElementById("customerAddress").value,
+    jobDescription: document.getElementById("jobDescription").value,
+    total: document.getElementById("totalAmount").innerText,
+    items: items,
+    type: document.getElementById("docType").value,
+    createdAt: serverTimestamp()
+  };
+
+  try {
+    await addDoc(collection(db, "quotes"), data);
+    alert("Record Saved to Cloud");
+    loadQuotes();
+  } catch(e) { alert("Error saving"); }
+};
+
+async function loadQuotes() {
+  quotesUl.innerHTML = "";
+  const q = query(collection(db, "quotes"), where("userId","==",currentUserId), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+
+  snap.forEach(docSnap => {
+    const d = docSnap.data();
+    const btn = document.createElement("button");
+    btn.className = "text-left p-4 bg-white border rounded-xl hover:border-orange-500 transition shadow-sm flex justify-between items-center";
+    btn.innerHTML = `
+        <div>
+            <p class="text-[10px] font-black text-gray-400 uppercase">${d.type || 'Quote'}</p>
+            <p class="font-black">${d.customerName}</p>
+        </div>
+        <p class="brand-orange font-black">£${d.total}</p>
     `;
-    tbody.appendChild(row);
-    calculateTotals();
-};
-
-window.calculateTotals = () => {
-    let sub = 0;
-    document.querySelectorAll('.cost-row').forEach(row => {
-        const r = parseFloat(row.querySelector('.item-cost').value) || 0;
-        const q = parseFloat(row.querySelector('.item-qty').value) || 0;
-        row.querySelector('.line-total').innerText = `£${(r * q).toFixed(2)}`;
-        sub += (r * q);
-    });
-    document.getElementById('grand-total').innerText = `£${sub.toFixed(2)}`;
-};
-
-window.saveToCloud = async () => {
-    const name = document.getElementById('cust-name').value;
-    if(!name) return alert("Name Required");
-    const items = Array.from(document.querySelectorAll('.cost-row')).map(row => ({
-        description: row.querySelector('.item-desc').value,
-        rate: row.querySelector('.item-cost').value,
-        quantity: row.querySelector('.item-qty').value
-    }));
-    try {
-        await addDoc(collection(db, "quotes"), { userId: currentUser.uid, customerName: name, customerAddress: document.getElementById('cust-address').value, date: document.getElementById('doc-date').value, jobDescription: document.getElementById('job-desc').value, type: currentDocType, total: document.getElementById('grand-total').innerText.replace('£', ''), items: items, createdAt: serverTimestamp() });
-        alert("Saved!"); loadHistory();
-    } catch (e) { alert("Save Error"); }
-};
-
-async function loadHistory() {
-    if(!currentUser) return;
-    const q = query(collection(db, "quotes"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"));
-    const snap = await getDocs(q);
-    const container = document.getElementById('history-list');
-    container.innerHTML = '';
-    snap.docs.forEach(d => {
-        const data = d.data();
-        const div = document.createElement('div');
-        div.className = "p-4 bg-white border rounded-xl flex justify-between items-center cursor-pointer hover:border-orange-500";
-        div.onclick = () => {
-            document.getElementById('cust-name').value = data.customerName;
-            document.getElementById('cust-address').value = data.customerAddress;
-            document.getElementById('job-desc').value = data.jobDescription;
-            document.getElementById('line-items').innerHTML = '';
-            data.items.forEach(i => addLineItem(i.description, i.rate, i.quantity));
-            setDocType(data.type);
-        };
-        div.innerHTML = `<div><p class="text-xs font-bold text-slate-400">${data.date}</p><p class="font-black">${data.customerName}</p></div><p class="font-black text-orange-600">£${data.total}</p>`;
-        container.appendChild(div);
-    });
+    btn.onclick = () => {
+        document.getElementById("customerName").value = d.customerName;
+        document.getElementById("customerAddress").value = d.customerAddress;
+        document.getElementById("jobDescription").value = d.jobDescription;
+        document.getElementById("docType").value = d.type || "Quote";
+        lineItemsContainer.innerHTML = "";
+        d.items.forEach(i => addItem(i.desc, i.qty, i.rate));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    quotesUl.appendChild(btn);
+  });
 }
 
-// NUCLEAR PDF FIX: CLONE AND LOCK WIDTH
-window.downloadPDF = async () => {
-    const original = document.getElementById('document-to-print');
-    
-    // 1. Create a "ghost" element that the user never sees
-    const ghost = original.cloneNode(true);
-    ghost.classList.add('pdf-capture-container');
-    
-    // 2. Clean UI elements out of the ghost
-    ghost.querySelectorAll('.no-print').forEach(el => el.remove());
-    const toggle = ghost.querySelector('#toggle-container'); if(toggle) toggle.remove();
-
-    // 3. Force all inputs into static text blocks
-    ghost.querySelectorAll('input, textarea').forEach((input, idx) => {
-        const replacement = document.createElement('div');
-        replacement.className = 'replacement-text';
-        
-        // Match existing value
-        const val = input.value;
-        
-        // Handle specific styles
-        if (input.id === 'cust-name') replacement.style.fontSize = '24px', replacement.style.fontWeight = 'bold';
-        if (input.classList.contains('item-cost')) replacement.style.textAlign = 'right';
-        if (input.classList.contains('item-qty')) replacement.style.textAlign = 'center';
-        
-        replacement.innerText = val;
-        input.parentNode.insertBefore(replacement, input);
-        input.remove();
-    });
-
-    // 4. Temporarily add to body (invisible) to capture
-    ghost.style.position = 'absolute';
-    ghost.style.left = '-9999px';
-    ghost.style.top = '0';
-    document.body.appendChild(ghost);
-
-    const opt = {
-        margin: [15, 15, 15, 15],
-        filename: `${currentDocType}_${document.getElementById('cust-name').value || 'Brammeld'}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            logging: false,
-            width: 700 // CAPTURE AT THIS EXACT WIDTH
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-        await html2pdf().set(opt).from(ghost).save();
-    } finally {
-        ghost.remove(); // Clean up memory
-    }
-};
+addItem();
